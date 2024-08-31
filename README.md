@@ -9,4 +9,4 @@ an engine for dynamically optimizing execution with the goal improving performan
 
 ## How to Use
 
-Visit our [installation insctructions](http://localhost:8000/home/install/#docker) for details on how to use those images.
+Visit our [installation insctructions](http://doc.log10x.com/home/install/#docker) for details on how to use those images.

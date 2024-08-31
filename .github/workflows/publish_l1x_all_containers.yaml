@@ -1,0 +1,61 @@
+name: Publish L1X continer (all)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        description: 'L1x version to install'
+        type: string
+      docker_hub:
+        required: true
+        description: 'Which docker hub to publish to'
+        type: choice
+        options:
+          - GHCR
+      publish_pipeline:
+        required: true
+        type: boolean
+        description: Publish Pipeline
+        default: true
+      publish_quarkus:
+        required: true
+        type: boolean
+        description: Publish Quarkus
+        default: true
+      publish_lambda:
+        required: true
+        type: boolean
+        description: Publish Lambda
+        default: false
+
+jobs:
+  Pipeline:
+    if: ${{ inputs.publish_pipeline }}
+    name: Pipeline
+    uses: ./.github/workflows/publish_l1x_all_hubs_container.yaml
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      image_type: "Pipeline"
+    secrets: inherit
+
+  Quarkus:
+    if: ${{ inputs.publish_quarkus }}
+    name: Quarkus
+    uses: ./.github/workflows/publish_l1x_all_hubs_container.yaml
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      image_type: "Quarkus"
+    secrets: inherit
+
+  Lambda:
+    if: ${{ inputs.publish_lambda }}
+    name: Lambda
+    uses: ./.github/workflows/publish_l1x_all_hubs_container.yaml
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      image_type: "Lambda"
+    secrets: inherit

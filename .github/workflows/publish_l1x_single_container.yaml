@@ -1,0 +1,131 @@
+name: Publish L1X continer
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        description: 'L1x version to install'
+        type: string
+      docker_hub:
+        required: true
+        description: 'Which docker hub to publish to'
+        type: choice
+        options:
+          - GHCR
+      image_type:
+        required: true
+        description: 'Type of container to build'
+        type: choice
+        options:
+          - Pipeline
+          - Quarkus
+          - Lambda
+
+  workflow_call:
+    inputs:
+      release_version:
+        required: true
+        type: string
+      docker_hub:
+        required: true
+        type: string
+      image_type:
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: "Build ${{inputs.image_type}}:${{inputs.release_version}} to ${{inputs.docker_hub}}"
+    
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Parameters
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if ("${{ inputs.docker_hub }}" != "GHCR") {
+              core.setFailed("Only GHCR hub is supported")
+            }
+
+            if ("${{ inputs.image_type }}" != "Pipeline" && "${{ inputs.image_type }}" != "Lambda" && "${{ inputs.image_type }}" != "Quarkus") {
+              core.setFailed("Only Pipeline/Lambda/Quarkus images are supported")
+            }
+
+      - name: Prepare variables
+        id: prep-vars
+        run: |
+          if [ "${{ inputs.image_type }}" == "Pipeline" ]; then
+            echo "image_name=l1x-pipeline" >> "$GITHUB_OUTPUT"
+            echo "download_pattern=\"*l1x-cloud*.rpm\"" >> "$GITHUB_OUTPUT"
+            echo "prepare_cmd=mv l1x-cloud*.rpm ./main/pipeline/l1x.rpm" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.image_type }}" == "Lambda" ]; then
+            echo "image_name=l1x-lambda" >> "$GITHUB_OUTPUT"
+            echo "download_pattern=\"*lambda*.zip\"" >> "$GITHUB_OUTPUT"
+            echo "prepare_cmd=unzip l1x-lambda*.zip -d ./main/lambda/" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.image_type }}" == "Quarkus" ]; then
+            echo "image_name=l1x-quarkus" >> "$GITHUB_OUTPUT"
+            echo "download_pattern=\"*quarkus*.tar\"" >> "$GITHUB_OUTPUT"
+            echo "prepare_cmd=tar -xvf l1x-quarkus*.tar -C ./main/quarkus/" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: main
+
+      - name: Download release artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+        run: |
+          gh release download ${{ inputs.release_version }} --pattern ${{ steps.prep-vars.outputs.download_pattern }} -R https://github.com/${{ vars.RELEASE_REPO }}
+
+      - name: Display fetched artifacts
+        run: ls -la
+
+      - name: Prepare artifact
+        run: ${{ steps.prep-vars.outputs.prepare_cmd }}
+
+      - name: Login to GHCR
+        if: ${{ inputs.docker_hub == 'GHCR' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare Docker meta
+        id: prep-docker
+        run: |
+          if [ "${{ inputs.image_type }}" == "Pipeline" ]; then
+            echo "docker_file=./main/pipeline/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "docker_context=./main/pipeline" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.image_type }}" == "Lambda" ]; then
+            echo "docker_file=./main/lambda/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "docker_context=./main/lambda" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.image_type }}" == "Quarkus" ]; then
+            echo "docker_file=./main/quarkus/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "docker_context=./main/quarkus" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ "${{ inputs.docker_hub }}" == "GHCR" ]; then
+            echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
+            echo "image_name=${{ steps.prep-vars.outputs.image_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Docker meta
+        id: docker-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.prep-docker.outputs.docker_repo }}/${{ steps.prep-docker.outputs.image_name }}
+          tags: |
+            type=raw,value=${{ inputs.release_version }}
+
+      - name: Publish container
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ steps.prep-docker.outputs.docker_file }}
+          context: ${{ steps.prep-docker.outputs.docker_context }}
+          push: true
+          tags: ${{ steps.docker-meta.outputs.tags }}

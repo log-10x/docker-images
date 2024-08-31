@@ -1,11 +1,11 @@
-name: Publish L1X continer (all)
+name: Publish Log10x continer (all)
 
 on:
   workflow_dispatch:
     inputs:
       release_version:
         required: true
-        description: 'L1x version to install'
+        description: 'Log10x version to install'
         type: string
       docker_hub:
         required: true
@@ -33,7 +33,7 @@ jobs:
   Pipeline:
     if: ${{ inputs.publish_pipeline }}
     name: Pipeline
-    uses: ./.github/workflows/publish_l1x_single_container.yaml
+    uses: ./.github/workflows/publish_log10x_single_container.yaml
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
@@ -43,7 +43,7 @@ jobs:
   Quarkus:
     if: ${{ inputs.publish_quarkus }}
     name: Quarkus
-    uses: ./.github/workflows/publish_l1x_single_container.yaml
+    uses: ./.github/workflows/publish_log10x_single_container.yaml
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
@@ -53,7 +53,7 @@ jobs:
   Lambda:
     if: ${{ inputs.publish_lambda }}
     name: Lambda
-    uses: ./.github/workflows/publish_l1x_single_container.yaml
+    uses: ./.github/workflows/publish_log10x_single_container.yaml
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}

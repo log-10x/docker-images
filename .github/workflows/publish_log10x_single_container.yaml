@@ -1,11 +1,11 @@
-name: Publish L1X continer
+name: Publish Log10x continer
 
 on:
   workflow_dispatch:
     inputs:
       release_version:
         required: true
-        description: 'L1x version to install'
+        description: 'Log10x version to install'
         type: string
       docker_hub:
         required: true
@@ -57,17 +57,17 @@ jobs:
         id: prep-vars
         run: |
           if [ "${{ inputs.image_type }}" == "Pipeline" ]; then
-            echo "image_name=l1x-pipeline" >> "$GITHUB_OUTPUT"
-            echo "download_pattern=\"*l1x-cloud*.rpm\"" >> "$GITHUB_OUTPUT"
-            echo "prepare_cmd=mv l1x-cloud*.rpm ./main/pipeline/l1x.rpm" >> "$GITHUB_OUTPUT"
+            echo "image_name=log10x-pipeline" >> "$GITHUB_OUTPUT"
+            echo "download_pattern=\"*log10x-cloud*.rpm\"" >> "$GITHUB_OUTPUT"
+            echo "prepare_cmd=mv log10x-cloud*.rpm ./main/pipeline/log10x.rpm" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.image_type }}" == "Lambda" ]; then
-            echo "image_name=l1x-lambda" >> "$GITHUB_OUTPUT"
+            echo "image_name=log10x-lambda" >> "$GITHUB_OUTPUT"
             echo "download_pattern=\"*lambda*.zip\"" >> "$GITHUB_OUTPUT"
-            echo "prepare_cmd=unzip l1x-lambda*.zip -d ./main/lambda/" >> "$GITHUB_OUTPUT"
+            echo "prepare_cmd=unzip log10x-lambda*.zip -d ./main/lambda/" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.image_type }}" == "Quarkus" ]; then
-            echo "image_name=l1x-quarkus" >> "$GITHUB_OUTPUT"
+            echo "image_name=log10x-quarkus" >> "$GITHUB_OUTPUT"
             echo "download_pattern=\"*quarkus*.tar\"" >> "$GITHUB_OUTPUT"
-            echo "prepare_cmd=tar -xvf l1x-quarkus*.tar -C ./main/quarkus/" >> "$GITHUB_OUTPUT"
+            echo "prepare_cmd=tar -xvf log10x-quarkus*.tar -C ./main/quarkus/" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout code

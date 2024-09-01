@@ -121,7 +121,7 @@ jobs:
           images: ${{ steps.prep-docker.outputs.docker_repo }}/${{ steps.prep-docker.outputs.image_name }}
           tags: |
             type=raw,value=${{ inputs.release_version }}
-            type=latest
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Publish container
         uses: docker/build-push-action@v5

@@ -20,4 +20,4 @@ Visit our [pipeline deployment](http://doc.log10x.com/home/install/docker/#log10
 
 ## K8 Deployment
 
-Want to periodically run Log10x in K8? Check out the [Log10x Jobs Helm Chart](https://github.com/log-10x/pipeline-helm-charts/tree/main/charts/l1x-jobs)
+Want to periodically run Log10x in K8? Check out the [Log10x Jobs Helm Chart](https://github.com/log-10x/helm-charts/tree/main/charts/log10x-jobs)

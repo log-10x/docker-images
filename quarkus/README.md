@@ -22,4 +22,4 @@ Visit our [quarkus deployment](http://doc.log10x.com/home/install/docker/#log10x
 
 ## K8 Deployment
 
-Want to deploy a cluster of Log10x quarkus servers to K8? Check out the [Log10x Quarkus Helm Chart](https://github.com/log-10x/pipeline-helm-charts/tree/main/charts/l1x-quarkus)
+Want to deploy a cluster of Log10x quarkus servers to K8? Check out the [Log10x Quarkus Helm Chart](https://github.com/log-10x/helm-charts/tree/main/charts/log10x-quarkus)

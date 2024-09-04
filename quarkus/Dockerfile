@@ -77,7 +77,10 @@
 #   accessed directly. (example: "foo.example.com,bar.example.com")
 #
 ###
-FROM registry.access.redhat.com/ubi8/openjdk-21:1.18
+FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/openjdk-21:1.18
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 ENV LANGUAGE='en_US:en'
 

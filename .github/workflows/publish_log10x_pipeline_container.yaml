@@ -78,6 +78,7 @@ jobs:
           images: ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}
           tags: |
             type=raw,value=${{ inputs.release_version }}-amd64
+            type=raw,value=latest-amd64,enable={{is_default_branch}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -120,6 +121,7 @@ jobs:
           images: ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}
           tags: |
             type=raw,value=${{ inputs.release_version }}-aarch64
+            type=raw,value=latest-aarch64,enable={{is_default_branch}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -152,14 +154,26 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create manifest
+      - name: Create manifest for ${{inputs.release_version}}
         run: |
           docker manifest create ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}} \
             --amend ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}}-amd64 \
             --amend ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}}-aarch64
-          
+
           docker manifest annotate --arch amd64 --os linux ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}} ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}}-amd64
           docker manifest annotate --arch arm64 --os linux ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}} ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}}-aarch64
           docker manifest inspect ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}}
 
           docker manifest push ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{inputs.release_version}}
+
+      - name: Create manifest for latest
+        run: |
+          docker manifest create ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest \
+            --amend ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest-amd64 \
+            --amend ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest-aarch64
+
+          docker manifest annotate --arch amd64 --os linux ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest-amd64
+          docker manifest annotate --arch arm64 --os linux ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest-aarch64
+          docker manifest inspect ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest
+
+          docker manifest push ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:latest

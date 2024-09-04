@@ -84,7 +84,7 @@ ARG BUILDPLATFORM
 
 ENV LANGUAGE='en_US:en'
 
-# Adding necessary l1x dependencies
+# Adding necessary Log10x dependencies
 
 # Ensure we run as root
 #
@@ -98,15 +98,15 @@ RUN mkdir -p /var/cache/yum && chmod 755 /var/cache/yum
 #
 RUN microdnf install -y dnf
 
-# Install binutils (strings), needed for l1x 'compile'
+# Install binutils (strings), needed for Log10x 'compile'
 #
 RUN dnf install -y binutils
 
-# Install python3, needed for l1x 'compile'
+# Install python3, needed for Log10x 'compile'
 #
 RUN dnf install -y python38
 
-# Install fluent-bit, used for forwarding data from L1x pipeline
+# Install fluent-bit, used for forwarding data from Log10x pipeline
 # to any supported destination, needed for certain 'run' configurations
 #
 COPY ./fluent-bit.repo /etc/yum.repos.d/fluent-bit.repo
@@ -122,7 +122,7 @@ COPY --chown=185 ./quarkus-app/*.jar /deployments/
 COPY --chown=185 ./quarkus-app/app/ /deployments/app/
 COPY --chown=185 ./quarkus-app/quarkus/ /deployments/quarkus/
 
-# Copy the L1x config
+# Copy the Log10x config
 COPY --chown=185 ./quarkus-config /etc/l1x/base-config
 
 # Make sure path for log file exists, so L1X_LOG_APPENDER can be changed to l1xFileAppender if desired

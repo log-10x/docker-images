@@ -33,11 +33,10 @@ jobs:
   Pipeline:
     if: ${{ inputs.publish_pipeline }}
     name: Pipeline
-    uses: ./.github/workflows/publish_log10x_single_container.yaml
+    uses: ./.github/workflows/publish_log10x_pipeline_container.yaml
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
-      image_type: "Pipeline"
     secrets: inherit
 
   Quarkus:

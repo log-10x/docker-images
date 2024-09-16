@@ -25,7 +25,7 @@ RUN dnf install -y curl sudo
 
 # Install Log10x
 #
-RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-config
+RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR}
 
 # Clean up the dnf cache to reduce image size
 #
@@ -35,10 +35,11 @@ RUN dnf clean all
 #
 RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
 
-# Set up env vars
+# Setting up Log10x environment variables
 #
 ENV L1X_HOME=/opt/log10x-${FLAVOR}
 ENV L1X_BIN=/opt/log10x-${FLAVOR}/bin/log10x-${FLAVOR}
+ENV L1X_PATH=/etc/log10x/config
 
 # Set Log10x logger to console.
 #

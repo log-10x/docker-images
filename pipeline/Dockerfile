@@ -1,8 +1,22 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi:8.10
+FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi:8.10 AS log10x-builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG VERSION
+ARG FLAVOR="cloud"
+
+# Install curl, needed for Log10x install script
+#
+RUN dnf install -y curl
+
+# Install Log10x
+#
+RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup
+
+FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi:8.10
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 ARG FLAVOR="cloud"
 
 # Install binutils (strings), needed for Log10x 'compile'
@@ -19,14 +33,6 @@ RUN dnf install -y python38
 COPY ./fluent-bit.repo /etc/yum.repos.d/fluent-bit.repo
 RUN dnf install -y fluent-bit
 
-# Install curl and sudo, needed for Log10x install script
-#
-RUN dnf install -y curl sudo
-
-# Install Log10x
-#
-RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR}
-
 # Clean up the dnf cache to reduce image size
 #
 RUN dnf clean all
@@ -35,7 +41,7 @@ RUN dnf clean all
 #
 RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
 
-# Setting up Log10x environment variables
+# Manually setting up Log10x environment variables
 #
 ENV L1X_HOME=/opt/log10x-${FLAVOR}
 ENV L1X_BIN=/opt/log10x-${FLAVOR}/bin/log10x-${FLAVOR}
@@ -45,7 +51,10 @@ ENV L1X_PATH=/etc/log10x/config
 #
 ENV L1X_LOG_APPENDER=l1xConsoleAppender
 
-RUN echo "Value of L1X_BIN is: $L1X_BIN"
+# Copy log10x from builder
+#
+COPY --from=log10x-builder $L1X_PATH $L1X_PATH
+COPY --from=log10x-builder $L1X_HOME $L1X_HOME
 
 ENTRYPOINT [ "sh", "-c", "exec $L1X_BIN \"${@}\"", "--" ]
 

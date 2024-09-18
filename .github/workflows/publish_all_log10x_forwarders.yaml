@@ -1,0 +1,152 @@
+name: Publish All Log10x forwarders
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        description: 'Log10x version to install'
+        type: string
+      docker_hub:
+        required: true
+        description: 'Which docker hub to publish to'
+        type: choice
+        options:
+          - GHCR
+      publish_filebeat:
+        required: true
+        type: boolean
+        description: Filebeat
+        default: true
+      publish_fluent_bit:
+        required: true
+        type: boolean
+        description: Fluent Bit
+        default: true
+      publish_fluent_bit_debug:
+        required: true
+        type: boolean
+        description: Fluent Bit (Debug)
+        default: true
+      publish_fluentd:
+        required: true
+        type: boolean
+        description: Fluentd
+        default: true
+
+jobs:
+  prepare:
+    name: Checks parameters and sets vars
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check parameters
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if ("${{ inputs.docker_hub }}" != "GHCR") {
+              core.setFailed("Only GHCR hub is supported")
+            }
+
+  filebeat-jit:
+    if: ${{ inputs.publish_filebeat }}
+    name: Filebeat JIT
+    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Filebeat
+      log10x_dist: Edge
+    secrets: inherit
+
+  filebeat-native:
+    if: ${{ inputs.publish_filebeat }}
+    name: Filebeat Native
+    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Filebeat
+      log10x_dist: Native
+    secrets: inherit
+
+  fluent-bit-jit:
+    if: ${{ inputs.publish_fluent_bit }}
+    name: Fluent-Bit JIT
+    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit
+      log10x_dist: Edge
+    secrets: inherit
+
+  fluent-bit-native:
+    if: ${{ inputs.publish_fluent_bit }}
+    name: Fluent-Bit Native
+    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit
+      log10x_dist: Native
+    secrets: inherit
+
+  fluent-bit-debug-jit:
+    if: ${{ inputs.publish_fluent_bit_debug }}
+    name: Fluent-Bit Debug JIT
+    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit-Debug
+      log10x_dist: Edge
+    secrets: inherit
+
+  fluent-bit-debug-native:
+    if: ${{ inputs.publish_fluent_bit_debug }}
+    name: Fluent-Bit Debug Native
+    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit-Debug
+      log10x_dist: Native
+    secrets: inherit
+
+  fluentd-jit:
+    if: ${{ inputs.publish_fluentd }}
+    name: Fluentd JIT
+    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluentd
+      log10x_dist: Edge
+    secrets: inherit
+
+  fluentd-native:
+    if: ${{ inputs.publish_fluentd }}
+    name: Fluentd Native
+    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ inputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluentd
+      log10x_dist: Native
+    secrets: inherit

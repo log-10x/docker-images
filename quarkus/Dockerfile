@@ -122,8 +122,9 @@ COPY --chown=185 ./quarkus-app/*.jar /deployments/
 COPY --chown=185 ./quarkus-app/app/ /deployments/app/
 COPY --chown=185 ./quarkus-app/quarkus/ /deployments/quarkus/
 
-# Copy the Log10x config
-COPY --chown=185 ./quarkus-config /etc/l1x/base-config
+# Copy the Log10x modules and config
+COPY --chown=185 ./quarkus-modules /etc/l1x/modules
+COPY --chown=185 ./quarkus-config /etc/l1x/default-config
 
 # Make sure path for log file exists, so L1X_LOG_APPENDER can be changed to l1xFileAppender if desired
 RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
@@ -131,7 +132,9 @@ RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
 EXPOSE 8080
 USER 185
 
-ENV L1X_PATH=/etc/l1x/base-config
+ENV L1X_MODULES_PATH=/etc/l1x/modules
+ENV L1X_CONFIG_PATH=/etc/l1x/default-config
+
 ENV L1X_LOG_APPENDER=l1xConsoleAppender
 ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.httpclient.allowRestrictedHeaders=host -Dfile.encoding=UTF-8"
 

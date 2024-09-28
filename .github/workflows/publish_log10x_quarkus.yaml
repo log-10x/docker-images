@@ -69,9 +69,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
         run: |
-          gh release download ${{ inputs.release_version }} --pattern "*quarkus*.tar" -R https://github.com/${{ vars.RELEASE_REPO }}
+          gh release download ${{ inputs.release_version }} --pattern "*quarkus*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
           ls -la
-          tar -xvf log10x-quarkus*.tar -C ./main/quarkus/
+          tar -xzvf log10x-quarkus*.tar.gz -C ./main/quarkus/
 
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' }}
@@ -118,9 +118,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
         run: |
-          gh release download ${{ inputs.release_version }} --pattern "*quarkus*.tar" -R https://github.com/${{ vars.RELEASE_REPO }}
+          gh release download ${{ inputs.release_version }} --pattern "*quarkus*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
           ls -la
-          tar -xvf log10x-quarkus*.tar -C ./main/quarkus/
+          tar -xzvf log10x-quarkus*.tar.gz -C ./main/quarkus/
 
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' }}

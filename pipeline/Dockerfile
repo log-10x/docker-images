@@ -45,7 +45,7 @@ RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
 #
 ENV L1X_HOME=/opt/log10x-${FLAVOR}
 ENV L1X_BIN=/opt/log10x-${FLAVOR}/bin/log10x-${FLAVOR}
-ENV L1X_PATH=/etc/log10x/config
+ENV L1X_CONFIG_PATH=/etc/log10x/config
 
 # Set Log10x logger to console.
 #

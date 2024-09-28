@@ -123,8 +123,8 @@ COPY --chown=185 ./quarkus-app/app/ /deployments/app/
 COPY --chown=185 ./quarkus-app/quarkus/ /deployments/quarkus/
 
 # Copy the Log10x modules and config
-COPY --chown=185 build/quarkus-modules /etc/l1x/modules
-COPY --chown=185 build/quarkus-config /etc/l1x/default-config
+COPY --chown=185 ./quarkus-modules /etc/l1x/modules
+COPY --chown=185 ./quarkus-config /etc/l1x/default-config
 
 # Make sure path for log file exists, so L1X_LOG_APPENDER can be changed to l1xFileAppender if desired
 RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x

@@ -40,7 +40,7 @@ ENV L1X_CONFIG_PATH=/etc/log10x/config
 # Running log10x with filebeat reporter launch configuration
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_COMMAND="@config/input/forwarder/filebeat/report/config.yaml"
+ENV L1X_COMMAND="@input/forwarder/filebeat/report/config.yaml"
 
 # Switch to root in order to be able to perform the installation and modification
 #

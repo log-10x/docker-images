@@ -53,7 +53,7 @@ ENV L1X_LOG_APPENDER=l1xConsoleAppender
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder $L1X_PATH $L1X_PATH
+COPY --from=log10x-builder $L1X_CONFIG_PATH $L1X_CONFIG_PATH
 COPY --from=log10x-builder $L1X_HOME $L1X_HOME
 
 ENTRYPOINT [ "sh", "-c", "exec $L1X_BIN \"${@}\"", "--" ]

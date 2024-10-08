@@ -35,7 +35,7 @@ ENV L1X_BIN=/opt/log10x-edge/bin/log10x-edge
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_PATH=/etc/log10x/config
+ENV L1X_CONFIG_PATH=/etc/log10x/config
 
 # Copying a minimal shell from the builder
 #
@@ -50,5 +50,5 @@ COPY --from=log10x-builder /bin/dash /bin/sh
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder $L1X_PATH $L1X_PATH
+COPY --from=log10x-builder /etc/log10x /etc/log10x
 COPY --from=log10x-builder $L1X_HOME $L1X_HOME

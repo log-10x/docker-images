@@ -34,7 +34,7 @@ ENV L1X_BIN=/opt/log10x-edge/bin/log10x-edge
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_PATH=/etc/log10x/config
+ENV L1X_CONFIG_PATH=/etc/log10x/config
 #
 # Running log10x with filebeat reporter launch configuration
 # This can be overriden by deployment envs like k8s, when creating user config
@@ -47,11 +47,11 @@ USER root
 
 # Modify the image entrypoint file, to run filebeat with a pipe into l1x executable
 #
-RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $L1X_BIN configFolder $L1X_PATH $L1X_COMMAND/' /usr/local/bin/docker-entrypoint
+RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $L1X_BIN configFolder $L1X_CONFIG_PATH $L1X_COMMAND/' /usr/local/bin/docker-entrypoint
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder $L1X_PATH $L1X_PATH
+COPY --from=log10x-builder /etc/log10x /etc/log10x
 COPY --from=log10x-builder $L1X_HOME $L1X_HOME
 
 # Switch back tothe filebeat user, same as original image

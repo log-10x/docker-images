@@ -31,6 +31,7 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} fluent/fluent-bit:3.1.7-debug
 #
 ENV L1X_HOME=/opt/log10x-edge
 ENV L1X_BIN=/opt/log10x-edge/bin/log10x-edge
+ENV L1X_MODULES_PATH=/opt/log10x-edge/lib/app/modules
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
@@ -39,7 +40,7 @@ ENV L1X_CONFIG_PATH=/etc/log10x/config
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder /etc/log10x /etc/log10x
+COPY --from=log10x-builder $L1X_CONFIG_PATH $L1X_CONFIG_PATH
 COPY --from=log10x-builder $L1X_HOME $L1X_HOME
 
 # Adding an entrypoint as the debug image doesn't do that

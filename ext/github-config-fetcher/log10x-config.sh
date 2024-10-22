@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Exit immediately if a command exits with a non-zero status
+set -e
+
 # default values
 dest_root="/data"
 dest_config="config"

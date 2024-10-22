@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Exit immediately if a command exits with a non-zero status
+set -e
+
 # default values
 dest_root="/data"
 dest_config="config"
@@ -77,15 +80,16 @@ git_clone() {
 	local dest=$3
 
 	if [[ -z "$branch" ]]; then
-		git clone --single-branch "$repo" "$dest"
+		git clone --single-branch "$repo" "$dest" || { echo "Error cloning $repo into $dest"; exit 1; }
 	else
-		git clone --single-branch --branch "$branch" "$repo" "$dest"
+		git clone --single-branch --branch "$branch" "$repo" "$dest" || { echo "Error cloning $repo into $dest (branch: $branch)"; exit 1; }
 	fi
 }
 
 if [[ -n "$config_repo" ]]; then
 	config_clone_path="$dest_root/$dest_config"
-	mkdir -p "$config_clone_path"
+
+	mkdir -p "$config_clone_path" || { echo "Error creating directory $config_clone_path"; exit 1; }
 
 	git_clone "$config_repo" "$config_branch" "$config_clone_path"
 fi
@@ -93,7 +97,7 @@ fi
 if [[ -n "$symbols_repo" ]]; then
 	symbols_clone_path="$dest_root/$dest_config/$dest_symbols"
 
-	mkdir -p "$symbols_clone_path"
+	mkdir -p "$symbols_clone_path" || { echo "Error creating directory $symbols_clone_path"; exit 1; }
 
 	if [[ -z "$symbols_path" ]]; then
 		git_clone "$symbols_repo" "$symbols_branch" "$symbols_clone_path"
@@ -105,9 +109,9 @@ if [[ -n "$symbols_repo" ]]; then
 		symbols_subfolder="$tmp_symbols/$symbols_path"
 
 		if [[ -d "$symbols_subfolder" && -n "$(ls -A "$symbols_subfolder")" ]]; then
-			mv "$symbols_subfolder"/* "$symbols_clone_path"
+			mv "$symbols_subfolder"/* "$symbols_clone_path" || { echo "Error moving symbols from $symbols_subfolder to $symbols_clone_path"; exit 1; }
 		else
-			echo "Warn - symbols subfolder $symbols_folder doesn't exist, or is empty"
+			echo "Warning - symbols subfolder $symbols_subfolder doesn't exist or is empty"
 		fi
 
 		rm -rf "$tmp_symbols"

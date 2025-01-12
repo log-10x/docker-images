@@ -34,14 +34,14 @@ ARG BUILDPLATFORM
 #
 ENV L1X_HOME=/opt/log10x-edge
 ENV L1X_BIN=/opt/log10x-edge/bin/log10x-edge
-ENV L1X_MODULES_PATH=/opt/log10x-edge/lib/app/modules
+ENV L1X_MODULES=/opt/log10x-edge/lib/app/modules
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_CONFIG_PATH=/etc/log10x/config
+ENV L1X_CONFIG=/etc/log10x/config
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder $L1X_CONFIG_PATH $L1X_CONFIG_PATH
+COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
 COPY --from=log10x-builder $L1X_HOME $L1X_HOME

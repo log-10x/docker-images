@@ -30,17 +30,17 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.elastic.co/beats/filebeat:8
 #
 ENV L1X_HOME=/opt/log10x-edge
 ENV L1X_BIN=/opt/log10x-edge/bin/log10x-edge
-ENV L1X_MODULES_PATH=/opt/log10x-edge/lib/app/modules
+ENV L1X_MODULES=/opt/log10x-edge/lib/app/modules
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_CONFIG_PATH=/etc/log10x/config
+ENV L1X_CONFIG=/etc/log10x/config
 #
 # Running log10x with filebeat reporter launch configuration
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_COMMAND="run @input/forwarder/filebeat/report/config.yaml @apps/edge/reporter/config.yaml"
+ENV L1X_RUN_ARGS="@pipelines/run/input/forwarder/filebeat/report/config.yaml @pipelines/run/apps/edge/reporter/config.yaml"
 
 # Switch to root in order to be able to perform the installation and modification
 #
@@ -48,11 +48,11 @@ USER root
 
 # Modify the image entrypoint file, to run filebeat with a pipe into l1x executable
 #
-RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $L1X_BIN configFolder $L1X_CONFIG_PATH $L1X_COMMAND/' /usr/local/bin/docker-entrypoint
+RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $L1X_BIN includePaths $L1X_CONFIG run $L1X_RUN_ARGS/' /usr/local/bin/docker-entrypoint
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder $L1X_CONFIG_PATH $L1X_CONFIG_PATH
+COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
 COPY --from=log10x-builder $L1X_HOME $L1X_HOME
 
 # Switch back tothe filebeat user, same as original image

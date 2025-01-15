@@ -40,7 +40,7 @@ ENV L1X_CONFIG=/etc/log10x/config
 # Running log10x with filebeat reporter launch configuration
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_RUN_ARGS="@pipelines/run/input/forwarder/filebeat/report/config.yaml @pipelines/run/apps/edge/reporter/config.yaml"
+ENV L1X_RUN_ARGS="@run/input/forwarder/filebeat/report/config.yaml @run/apps/edge/reporter/config.yaml"
 
 # Switch to root in order to be able to perform the installation and modification
 #
@@ -48,7 +48,7 @@ USER root
 
 # Modify the image entrypoint file, to run filebeat with a pipe into l1x executable
 #
-RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $L1X_BIN includePaths $L1X_CONFIG run $L1X_RUN_ARGS/' /usr/local/bin/docker-entrypoint
+RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $L1X_BIN includePaths $L1X_MODULES/pipelines includePaths $L1X_CONFIG/pipelines run $L1X_RUN_ARGS/' /usr/local/bin/docker-entrypoint
 
 # Copy log10x from builder
 #

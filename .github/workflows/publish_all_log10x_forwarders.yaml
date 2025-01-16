@@ -38,11 +38,6 @@ on:
         type: boolean
         description: Fluentd
         default: true
-      build_native:
-        required: true
-        type: boolean
-        description: Native
-        default: true
 
 jobs:
   prepare:
@@ -71,7 +66,7 @@ jobs:
     secrets: inherit
 
   filebeat-native:
-    if: ${{ inputs.publish_filebeat }} && ${{ inputs.build_native }}
+    if: ${{ inputs.publish_filebeat }}
     name: Filebeat Native
     uses: ./.github/workflows/publish_log10x_forwarder.yaml
     needs:
@@ -97,7 +92,7 @@ jobs:
     secrets: inherit
 
   filebeat-debug-native:
-    if: ${{ inputs.publish_filebeat_debug }} && ${{ inputs.build_native }}
+    if: ${{ inputs.publish_filebeat_debug }}
     name: Filebeat Debug Native
     uses: ./.github/workflows/publish_log10x_forwarder.yaml
     needs:
@@ -123,7 +118,7 @@ jobs:
     secrets: inherit
 
   fluent-bit-native:
-    if: ${{ inputs.publish_fluent_bit }} && ${{ inputs.build_native }}
+    if: ${{ inputs.publish_fluent_bit }}
     name: Fluent-Bit Native
     uses: ./.github/workflows/publish_log10x_forwarder.yaml
     needs:
@@ -149,7 +144,7 @@ jobs:
     secrets: inherit
 
   fluent-bit-debug-native:
-    if: ${{ inputs.publish_fluent_bit_debug }} && ${{ inputs.build_native }}
+    if: ${{ inputs.publish_fluent_bit_debug }}
     name: Fluent-Bit Debug Native
     uses: ./.github/workflows/publish_log10x_forwarder.yaml
     needs:
@@ -175,7 +170,7 @@ jobs:
     secrets: inherit
 
   fluentd-native:
-    if: ${{ inputs.publish_fluentd }} && ${{ inputs.build_native }}
+    if: ${{ inputs.publish_fluentd }}
     name: Fluentd Native
     uses: ./.github/workflows/publish_log10x_forwarder.yaml
     needs:

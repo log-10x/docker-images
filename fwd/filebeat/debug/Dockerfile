@@ -46,6 +46,10 @@ ENV L1X_RUN_ARGS="@run/input/forwarder/filebeat/report/config.yaml @run/apps/edg
 #
 USER root
 
+# Make sure the path for the 'tee' command exists
+#
+RUN mkdir -p /etc/log10x/debug
+
 # Modify the image entrypoint file, to run filebeat with a pipe into l1x executable
 #
 RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | tee \/etc\/log10x\/debug\/raw_filebeat.log | $L1X_BIN includePaths $L1X_MODULES\/pipelines includePaths $L1X_CONFIG\/pipelines run $L1X_RUN_ARGS/' /usr/local/bin/docker-entrypoint

@@ -19,6 +19,7 @@ on:
         type: choice
         options:
           - Filebeat
+          - Filebeat-Debug
           - Fluent-Bit
           - Fluent-Bit-Debug
           - Fluentd
@@ -64,8 +65,8 @@ jobs:
               core.setFailed("Only GHCR hub is supported")
             }
 
-            if ("${{ inputs.forwarder_type }}" != "Filebeat" && "${{ inputs.forwarder_type }}" != "Fluent-Bit" && "${{ inputs.forwarder_type }}" != "Fluent-Bit-Debug" && "${{ inputs.forwarder_type }}" != "Fluentd") {
-              core.setFailed("Only Filebeat/Fluent-Bit/Fluent-Bit-Debug/Fluentd forwarders are supported")
+            if ("${{ inputs.forwarder_type }}" != "Filebeat" && "${{ inputs.forwarder_type }}" != "Filebeat-Debug" && "${{ inputs.forwarder_type }}" != "Fluent-Bit" && "${{ inputs.forwarder_type }}" != "Fluent-Bit-Debug" && "${{ inputs.forwarder_type }}" != "Fluentd") {
+              core.setFailed("Only Filebeat/Filebeat-Debug/Fluent-Bit/Fluent-Bit-Debug/Fluentd forwarders are supported")
             }
 
             if ("${{ inputs.log10x_dist }}" != "Edge" && "${{ inputs.log10x_dist }}" != "Native") {
@@ -78,6 +79,9 @@ jobs:
           if [ "${{ inputs.forwarder_type }}" == "Filebeat" ]; then
             echo "image_name=log10x-filebeat" >> "$GITHUB_OUTPUT"
             echo "docker_file=./main/fwd/filebeat/Dockerfile" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.forwarder_type }}" == "Filebeat-Debug" ]; then
+            echo "image_name=log10x-filebeat" >> "$GITHUB_OUTPUT"
+            echo "docker_file=./main/fwd/filebeat/debug/Dockerfile" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.forwarder_type }}" == "Fluent-Bit" ]; then
             echo "image_name=log10x-fluent-bit" >> "$GITHUB_OUTPUT"
             echo "docker_file=./main/fwd/fluent-bit/Dockerfile" >> "$GITHUB_OUTPUT"
@@ -91,17 +95,17 @@ jobs:
 
           echo "docker_context=." >> "$GITHUB_OUTPUT"
 
-          if [ "${{ inputs.forwarder_type }}" == "Fluent-Bit-Debug" ]; then
-            if [ "${{ inputs.log10x_dist }}" == "Edge" ]; then
-              echo "version_tag=${{inputs.release_version}}-jit-debug" >> "$GITHUB_OUTPUT"
-            elif [ "${{ inputs.log10x_dist }}" == "Native" ]; then
-              echo "version_tag=${{inputs.release_version}}-native-debug" >> "$GITHUB_OUTPUT"
-            fi
-          else
+          if [ "${{ inputs.forwarder_type }}" != "Fluent-Bit-Debug" && "${{ inputs.forwarder_type }}" != "Filebeat-Debug" ]; then
             if [ "${{ inputs.log10x_dist }}" == "Edge" ]; then
               echo "version_tag=${{inputs.release_version}}-jit" >> "$GITHUB_OUTPUT"
             elif [ "${{ inputs.log10x_dist }}" == "Native" ]; then
               echo "version_tag=${{inputs.release_version}}-native" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            if [ "${{ inputs.log10x_dist }}" == "Edge" ]; then
+              echo "version_tag=${{inputs.release_version}}-jit-debug" >> "$GITHUB_OUTPUT"
+            elif [ "${{ inputs.log10x_dist }}" == "Native" ]; then
+              echo "version_tag=${{inputs.release_version}}-native-debug" >> "$GITHUB_OUTPUT"
             fi
           fi
 

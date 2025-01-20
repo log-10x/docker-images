@@ -95,7 +95,7 @@ jobs:
 
           echo "docker_context=." >> "$GITHUB_OUTPUT"
 
-          if [ "${{ inputs.forwarder_type }}" != "Fluent-Bit-Debug" && "${{ inputs.forwarder_type }}" != "Filebeat-Debug" ]; then
+          if [ "${{ inputs.forwarder_type }}" != "Fluent-Bit-Debug" ] && [ "${{ inputs.forwarder_type }}" != "Filebeat-Debug" ]; then
             if [ "${{ inputs.log10x_dist }}" == "Edge" ]; then
               echo "version_tag=${{inputs.release_version}}-jit" >> "$GITHUB_OUTPUT"
             elif [ "${{ inputs.log10x_dist }}" == "Native" ]; then

@@ -45,7 +45,12 @@ RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
 #
 ENV L1X_HOME=/opt/log10x-${FLAVOR}
 ENV L1X_BIN=/opt/log10x-${FLAVOR}/bin/log10x-${FLAVOR}
-ENV L1X_CONFIG_PATH=/etc/log10x/config
+ENV L1X_MODULES=/opt/log10x-${FLAVOR}/lib/app/modules
+ENV L1X_CONFIG=/etc/log10x/config
+
+# License key should be overriden by deployment (k8 helm) or config file
+#
+ENV L1X_LICENSE=NO-LICENSE
 
 # Set Log10x logger to console.
 #
@@ -53,9 +58,11 @@ ENV L1X_LOG_APPENDER=l1xConsoleAppender
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder $L1X_CONFIG_PATH $L1X_CONFIG_PATH
+COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
 COPY --from=log10x-builder $L1X_HOME $L1X_HOME
 
-ENTRYPOINT [ "sh", "-c", "exec $L1X_BIN \"${@}\"", "--" ]
+ENTRYPOINT [ "sh", "-c", "exec $L1X_BIN includePaths $L1X_CONFIG includePaths $L1X_CONFIG/pipelines includePaths $L1X_MODULES/pipelines \"${@}\"", "--" ]
 
-CMD [ "run" ]
+# Default run sample
+#
+CMD [ "run", "@run/config.yaml" ]

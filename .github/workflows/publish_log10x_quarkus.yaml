@@ -13,6 +13,13 @@ on:
         type: choice
         options:
           - GHCR
+      build_type:
+        required: true
+        description: 'Type of build'
+        type: choice
+        options:
+          Standard
+          Debug
 
   workflow_call:
     inputs:
@@ -42,13 +49,23 @@ jobs:
               core.setFailed("Only GHCR hub is supported")
             }
 
+            if ("${{ inputs.build_type }}" != "Standard" && "${{ inputs.build_type }}" != "Debug") {
+              core.setFailed("Only Standard/Debug build types are supported")
+            }
+
       - name: Prepare variables
         id: vars
         run: |
           echo "image_name=log10x-quarkus" >> "$GITHUB_OUTPUT"
-          echo "docker_file=./main/quarkus/Dockerfile" >> "$GITHUB_OUTPUT"
           echo "docker_context=./main/quarkus" >> "$GITHUB_OUTPUT"
-          echo "version_tag=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ inputs.build_type }}" == "Standard" ]; then
+            echo "docker_file=./main/quarkus/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "version_tag=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.build_type }}" == "Debug" ]; then
+            echo "docker_file=./main/quarkus/Dockerfile.debug" >> "$GITHUB_OUTPUT"
+            echo "version_tag=${{inputs.release_version}}-debug" >> "$GITHUB_OUTPUT"
+          fi
 
           if [ "${{ inputs.docker_hub }}" == "GHCR" ]; then
             echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"

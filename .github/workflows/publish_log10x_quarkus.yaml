@@ -18,8 +18,8 @@ on:
         description: 'Type of build'
         type: choice
         options:
-          Standard
-          Debug
+          - Standard
+          - Debug
 
   workflow_call:
     inputs:

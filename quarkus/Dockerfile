@@ -132,8 +132,8 @@ RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
 EXPOSE 8080
 USER 185
 
-ENV L1X_MODULES_PATH=/etc/l1x/modules
-ENV L1X_CONFIG_PATH=/etc/l1x/default-config
+ENV L1X_MODULES=/etc/l1x/modules
+ENV L1X_CONFIG=/etc/l1x/default-config
 
 ENV L1X_LOG_APPENDER=l1xConsoleAppender
 ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.httpclient.allowRestrictedHeaders=host -Dfile.encoding=UTF-8"

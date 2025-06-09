@@ -48,7 +48,7 @@ USER root
 
 # Modify the image entrypoint file, to run filebeat with a pipe into l1x executable
 #
-RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $L1X_BIN includePaths $L1X_MODULES\/pipelines includePaths $L1X_CONFIG\/pipelines run $L1X_RUN_ARGS/' /usr/local/bin/docker-entrypoint
+RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $L1X_BIN run $L1X_RUN_ARGS/' /usr/local/bin/docker-entrypoint
 
 # Copy log10x from builder
 #

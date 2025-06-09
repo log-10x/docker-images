@@ -61,7 +61,7 @@ ENV L1X_LOG_APPENDER=l1xConsoleAppender
 COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
 COPY --from=log10x-builder $L1X_HOME $L1X_HOME
 
-ENTRYPOINT [ "sh", "-c", "exec $L1X_BIN includePaths $L1X_CONFIG includePaths $L1X_CONFIG/pipelines includePaths $L1X_MODULES/pipelines \"${@}\"", "--" ]
+ENTRYPOINT [ "sh", "-c", "exec $L1X_BIN \"${@}\"", "--" ]
 
 # Default run sample
 #

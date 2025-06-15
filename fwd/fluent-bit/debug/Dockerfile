@@ -29,19 +29,19 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} fluent/fluent-bit:3.1.7-debug
 
 # Manually setting up Log10x environment variables
 #
-ENV L1X_HOME=/opt/log10x-edge
-ENV L1X_BIN=/opt/log10x-edge/bin/log10x-edge
-ENV L1X_MODULES=/opt/log10x-edge/lib/app/modules
+ENV TENX_HOME=/opt/log10x-edge
+ENV TENX_BIN=/opt/log10x-edge/bin/log10x-edge
+ENV TENX_MODULES=/opt/log10x-edge/lib/app/modules
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_CONFIG=/etc/log10x/config
+ENV TENX_CONFIG=/etc/log10x/config
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
-COPY --from=log10x-builder $L1X_HOME $L1X_HOME
+COPY --from=log10x-builder $TENX_CONFIG $TENX_CONFIG
+COPY --from=log10x-builder $TENX_HOME $TENX_HOME
 
 # Adding an entrypoint as the debug image doesn't do that
 #

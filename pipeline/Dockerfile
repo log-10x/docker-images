@@ -37,31 +37,31 @@ RUN dnf install -y fluent-bit
 #
 RUN dnf clean all
 
-# Make sure path for log file exists, so L1X_LOG_APPENDER can be changed to l1xFileAppender if desired
+# Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to l1xFileAppender if desired
 #
 RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
 
 # Manually setting up Log10x environment variables
 #
-ENV L1X_HOME=/opt/log10x-${FLAVOR}
-ENV L1X_BIN=/opt/log10x-${FLAVOR}/bin/log10x-${FLAVOR}
-ENV L1X_MODULES=/opt/log10x-${FLAVOR}/lib/app/modules
-ENV L1X_CONFIG=/etc/log10x/config
+ENV TENX_HOME=/opt/log10x-${FLAVOR}
+ENV TENX_BIN=/opt/log10x-${FLAVOR}/bin/log10x-${FLAVOR}
+ENV TENX_MODULES=/opt/log10x-${FLAVOR}/lib/app/modules
+ENV TENX_CONFIG=/etc/log10x/config
 
 # License key should be overriden by deployment (k8 helm) or config file
 #
-ENV L1X_LICENSE=NO-LICENSE
+ENV TENX_LICENSE=NO-LICENSE
 
 # Set Log10x logger to console.
 #
-ENV L1X_LOG_APPENDER=l1xConsoleAppender
+ENV TENX_LOG_APPENDER=l1xConsoleAppender
 
 # Copy log10x from builder
 #
-COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
-COPY --from=log10x-builder $L1X_HOME $L1X_HOME
+COPY --from=log10x-builder $TENX_CONFIG $TENX_CONFIG
+COPY --from=log10x-builder $TENX_HOME $TENX_HOME
 
-ENTRYPOINT [ "sh", "-c", "exec $L1X_BIN \"${@}\"", "--" ]
+ENTRYPOINT [ "sh", "-c", "exec $TENX_BIN \"${@}\"", "--" ]
 
 # Default run sample
 #

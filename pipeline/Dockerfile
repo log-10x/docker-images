@@ -37,9 +37,9 @@ RUN dnf install -y fluent-bit
 #
 RUN dnf clean all
 
-# Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to l1xFileAppender if desired
+# Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to tenxFileAppender if desired
 #
-RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
+RUN mkdir -p /var/log/tenx && chown 185 /var/log/tenx
 
 # Manually setting up Log10x environment variables
 #
@@ -54,7 +54,7 @@ ENV TENX_LICENSE=NO-LICENSE
 
 # Set Log10x logger to console.
 #
-ENV TENX_LOG_APPENDER=l1xConsoleAppender
+ENV TENX_LOG_APPENDER=tenxConsoleAppender
 
 # Copy log10x from builder
 #

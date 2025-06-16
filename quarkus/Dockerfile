@@ -123,19 +123,19 @@ COPY --chown=185 ./quarkus-app/app/ /deployments/app/
 COPY --chown=185 ./quarkus-app/quarkus/ /deployments/quarkus/
 
 # Copy the Log10x modules and config
-COPY --chown=185 ./quarkus-modules /etc/l1x/modules
-COPY --chown=185 ./quarkus-config /etc/l1x/default-config
+COPY --chown=185 ./quarkus-modules /etc/tenx/modules
+COPY --chown=185 ./quarkus-config /etc/tenx/default-config
 
-# Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to l1xFileAppender if desired
-RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
+# Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to tenxFileAppender if desired
+RUN mkdir -p /var/log/tenx && chown 185 /var/log/tenx
 
 EXPOSE 8080
 USER 185
 
-ENV TENX_MODULES=/etc/l1x/modules
-ENV TENX_CONFIG=/etc/l1x/default-config
+ENV TENX_MODULES=/etc/tenx/modules
+ENV TENX_CONFIG=/etc/tenx/default-config
 
-ENV TENX_LOG_APPENDER=l1xConsoleAppender
+ENV TENX_LOG_APPENDER=tenxConsoleAppender
 ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.httpclient.allowRestrictedHeaders=host -Dfile.encoding=UTF-8"
 
 ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"

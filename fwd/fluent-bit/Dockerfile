@@ -40,7 +40,7 @@ ENV TENX_CONFIG=/etc/log10x/config
 
 # Copying a minimal shell from the builder
 #
-# This is needed because l1x.lua invokes the 10x pipeline runable by
+# This is needed because 'tenx.lua' invokes the 10x pipeline runable by
 # calling io.popen, which relies on a /bin/sh -c call to work
 #
 # For more info, see:

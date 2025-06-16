@@ -50,7 +50,7 @@ USER root
 #
 RUN mkdir -p /etc/log10x/debug
 
-# Modify the image entrypoint file, to run filebeat with a pipe into l1x executable
+# Modify the image entrypoint file, to run filebeat with a pipe into 10x executable
 #
 RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | tee \/etc\/log10x\/debug\/raw_filebeat.log | $TENX_BIN run $TENX_RUN_ARGS/' /usr/local/bin/docker-entrypoint
 

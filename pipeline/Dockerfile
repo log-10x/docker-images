@@ -62,9 +62,10 @@ ENV TENX_LOG_APPENDER=tenxConsoleAppender
 COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
 COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 
-# Switch to ubuntu user and run from their home directory
-USER ubuntu
-WORKDIR /home/ubuntu
+# Create tenxuser user and run from their home directory
+RUN useradd -m -u 1000 tenxuser
+USER tenxuser
+WORKDIR /home/tenxuser
 
 ENTRYPOINT [ "sh", "-c", "exec $TENX_BIN \"${@}\"", "--" ]
 

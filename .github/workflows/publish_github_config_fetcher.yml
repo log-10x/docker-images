@@ -1,4 +1,4 @@
-name: Publish Log10x Github config fetcher
+name: Publish 10x Github config fetcher
 
 on:
   workflow_dispatch:

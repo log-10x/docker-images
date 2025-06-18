@@ -102,7 +102,7 @@ if [[ -n "$symbols_repo" ]]; then
 	if [[ -z "$symbols_path" ]]; then
 		git_clone "$symbols_repo" "$symbols_branch" "$symbols_clone_path"
 	else
-		tmp_symbols="/tmp/log10x-symbols"
+		tmp_symbols="/tmp/tenx-symbols"
 
 		git_clone "$symbols_repo" "$symbols_branch" "$tmp_symbols"
 

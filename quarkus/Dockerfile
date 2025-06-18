@@ -7,11 +7,11 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/log10x-pipeline-quarkus-jvm .
+# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/tenx-pipeline-quarkus-jvm .
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 quarkus/log10x-pipeline-quarkus-jvm
+# docker run -i --rm -p 8080:8080 quarkus/tenx-pipeline-quarkus-jvm
 #
 # If you want to include the debug port into your docker image
 # you will have to expose the debug port (default 5005 being the default) like this :  EXPOSE 8080 5005.
@@ -20,7 +20,7 @@
 #
 # Then run the container using :
 #
-# docker run -i --rm -p 8080:8080 quarkus/log10x-pipeline-quarkus-jvm
+# docker run -i --rm -p 8080:8080 quarkus/tenx-pipeline-quarkus-jvm
 #
 # This image uses the `run-java.sh` script to run the application.
 # This scripts computes the command line to execute your Java application, and
@@ -84,7 +84,7 @@ ARG BUILDPLATFORM
 
 ENV LANGUAGE='en_US:en'
 
-# Adding necessary Log10x dependencies
+# Adding necessary 10x dependencies
 
 # Ensure we run as root
 #
@@ -98,15 +98,15 @@ RUN mkdir -p /var/cache/yum && chmod 755 /var/cache/yum
 #
 RUN microdnf install -y dnf
 
-# Install binutils (strings), needed for Log10x 'compile'
+# Install binutils (strings), needed for 10x 'compile'
 #
 RUN dnf install -y binutils
 
-# Install python3, needed for Log10x 'compile'
+# Install python3, needed for 10x 'compile'
 #
 RUN dnf install -y python38
 
-# Install fluent-bit, used for forwarding data from Log10x pipeline
+# Install fluent-bit, used for forwarding data from 10x pipeline
 # to any supported destination, needed for certain 'run' configurations
 #
 COPY ./fluent-bit.repo /etc/yum.repos.d/fluent-bit.repo
@@ -122,20 +122,20 @@ COPY --chown=185 ./quarkus-app/*.jar /deployments/
 COPY --chown=185 ./quarkus-app/app/ /deployments/app/
 COPY --chown=185 ./quarkus-app/quarkus/ /deployments/quarkus/
 
-# Copy the Log10x modules and config
-COPY --chown=185 ./quarkus-modules /etc/l1x/modules
-COPY --chown=185 ./quarkus-config /etc/l1x/default-config
+# Copy the 10x modules and config
+COPY --chown=185 ./quarkus-modules /etc/tenx/modules
+COPY --chown=185 ./quarkus-config /etc/tenx/default-config
 
-# Make sure path for log file exists, so L1X_LOG_APPENDER can be changed to l1xFileAppender if desired
-RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
+# Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to tenxFileAppender if desired
+RUN mkdir -p /var/log/tenx && chown 185 /var/log/tenx
 
 EXPOSE 8080
 USER 185
 
-ENV L1X_MODULES=/etc/l1x/modules
-ENV L1X_CONFIG=/etc/l1x/default-config
+ENV TENX_MODULES=/etc/tenx/modules
+ENV TENX_CONFIG=/etc/tenx/default-config
 
-ENV L1X_LOG_APPENDER=l1xConsoleAppender
+ENV TENX_LOG_APPENDER=tenxConsoleAppender
 ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.httpclient.allowRestrictedHeaders=host -Dfile.encoding=UTF-8"
 
 ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"

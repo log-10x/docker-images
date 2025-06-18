@@ -1,6 +1,6 @@
-# Log10x builder
+# 10x builder
 #
-FROM --platform=${BUILDPLATFORM:-linux/amd64} ubuntu:20.04 AS log10x-builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} ubuntu:20.04 AS tenx-builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -14,11 +14,11 @@ RUN VALIDATE_FLAVOR=$(echo "${FLAVOR}" | tr '[:upper:]' '[:lower:]') && \
     exit 1; \
 fi
 
-# Install curl, needed for Log10x install script
+# Install curl, needed for 10x install script
 #
 RUN apt-get update && apt-get install -y curl
 
-# Install Log10x
+# Install 10x
 #
 RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup
 
@@ -26,21 +26,21 @@ RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/instal
 # Filebeat image
 FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.elastic.co/beats/filebeat:8.5.1
 
-# Manually setting up Log10x environment variables
+# Manually setting up 10x environment variables
 #
-ENV L1X_HOME=/opt/log10x-edge
-ENV L1X_BIN=/opt/log10x-edge/bin/log10x-edge
-ENV L1X_MODULES=/opt/log10x-edge/lib/app/modules
+ENV TENX_HOME=/opt/tenx-edge
+ENV TENX_BIN=/opt/tenx-edge/bin/tenx-edge
+ENV TENX_MODULES=/opt/tenx-edge/lib/app/modules
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_CONFIG=/etc/log10x/config
+ENV TENX_CONFIG=/etc/tenx/config
 #
-# Running log10x with filebeat reporter launch configuration
+# Running 10x with filebeat reporter launch configuration
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_RUN_ARGS="@run/input/forwarder/filebeat/report/config.yaml @run/apps/edge/reporter/config.yaml"
+ENV TENX_RUN_ARGS="@run/input/forwarder/filebeat/report/config.yaml @run/apps/edge/reporter"
 
 # Switch to root in order to be able to perform the installation and modification
 #
@@ -48,16 +48,16 @@ USER root
 
 # Make sure the path for the 'tee' command exists
 #
-RUN mkdir -p /etc/log10x/debug
+RUN mkdir -p /etc/tenx/debug
 
-# Modify the image entrypoint file, to run filebeat with a pipe into l1x executable
+# Modify the image entrypoint file, to run filebeat with a pipe into 10x executable
 #
-RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | tee \/etc\/log10x\/debug\/raw_filebeat.log | $L1X_BIN includePaths $L1X_MODULES\/pipelines includePaths $L1X_CONFIG\/pipelines run $L1X_RUN_ARGS/' /usr/local/bin/docker-entrypoint
+RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | tee \/etc\/tenx\/debug\/raw_filebeat.log | $TENX_BIN run $TENX_RUN_ARGS/' /usr/local/bin/docker-entrypoint
 
-# Copy log10x from builder
+# Copy 10x from builder
 #
-COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
-COPY --from=log10x-builder $L1X_HOME $L1X_HOME
+COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
+COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 
 # Switch back tothe filebeat user, same as original image
 #

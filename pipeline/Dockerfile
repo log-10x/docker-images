@@ -1,15 +1,15 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi:8.10 AS log10x-builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi:8.10 AS tenx-builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG VERSION
 ARG FLAVOR="cloud"
 
-# Install curl, needed for Log10x install script
+# Install curl, needed for 10x install script
 #
 RUN dnf install -y curl
 
-# Install Log10x
+# Install 10x
 #
 RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup
 
@@ -19,15 +19,15 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG FLAVOR="cloud"
 
-# Install binutils (strings), needed for Log10x 'compile'
+# Install binutils (strings), needed for 10x 'compile'
 #
 RUN dnf install -y binutils
 
-# Install python3, needed for Log10x 'compile'
+# Install python3, needed for 10x 'compile'
 #
 RUN dnf install -y python38
 
-# Install fluent-bit, used for forwarding data from Log10x pipeline
+# Install fluent-bit, used for forwarding data from 10x pipeline
 # to any supported destination, needed for certain 'run' configurations
 #
 COPY ./fluent-bit.repo /etc/yum.repos.d/fluent-bit.repo
@@ -37,31 +37,31 @@ RUN dnf install -y fluent-bit
 #
 RUN dnf clean all
 
-# Make sure path for log file exists, so L1X_LOG_APPENDER can be changed to l1xFileAppender if desired
+# Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to tenxFileAppender if desired
 #
-RUN mkdir -p /var/log/l1x && chown 185 /var/log/l1x
+RUN mkdir -p /var/log/tenx && chown 185 /var/log/tenx
 
-# Manually setting up Log10x environment variables
+# Manually setting up 10x environment variables
 #
-ENV L1X_HOME=/opt/log10x-${FLAVOR}
-ENV L1X_BIN=/opt/log10x-${FLAVOR}/bin/log10x-${FLAVOR}
-ENV L1X_MODULES=/opt/log10x-${FLAVOR}/lib/app/modules
-ENV L1X_CONFIG=/etc/log10x/config
+ENV TENX_HOME=/opt/tenx-${FLAVOR}
+ENV TENX_BIN=/opt/tenx-${FLAVOR}/bin/tenx-${FLAVOR}
+ENV TENX_MODULES=/opt/tenx-${FLAVOR}/lib/app/modules
+ENV TENX_CONFIG=/etc/tenx/config
 
 # License key should be overriden by deployment (k8 helm) or config file
 #
-ENV L1X_LICENSE=NO-LICENSE
+ENV TENX_LICENSE=NO-LICENSE
 
-# Set Log10x logger to console.
+# Set 10x logger to console.
 #
-ENV L1X_LOG_APPENDER=l1xConsoleAppender
+ENV TENX_LOG_APPENDER=tenxConsoleAppender
 
-# Copy log10x from builder
+# Copy 10x from builder
 #
-COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
-COPY --from=log10x-builder $L1X_HOME $L1X_HOME
+COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
+COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 
-ENTRYPOINT [ "sh", "-c", "exec $L1X_BIN includePaths $L1X_CONFIG includePaths $L1X_CONFIG/pipelines includePaths $L1X_MODULES/pipelines \"${@}\"", "--" ]
+ENTRYPOINT [ "sh", "-c", "exec $TENX_BIN \"${@}\"", "--" ]
 
 # Default run sample
 #

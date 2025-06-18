@@ -1,11 +1,11 @@
-name: Publish All Log10x forwarders
+name: Publish All 10x forwarders
 
 on:
   workflow_dispatch:
     inputs:
       release_version:
         required: true
-        description: 'Log10x version to install'
+        description: '10x version to install'
         type: string
       docker_hub:
         required: true
@@ -55,129 +55,129 @@ jobs:
   filebeat-jit:
     if: ${{ inputs.publish_filebeat }}
     name: Filebeat JIT
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Filebeat
-      log10x_dist: Edge
+      tenx_dist: Edge
     secrets: inherit
 
   filebeat-native:
     if: ${{ inputs.publish_filebeat }}
     name: Filebeat Native
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Filebeat
-      log10x_dist: Native
+      tenx_dist: Native
     secrets: inherit
 
   filebeat-debug-jit:
     if: ${{ inputs.publish_filebeat_debug }}
     name: Filebeat Debug JIT
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Filebeat-Debug
-      log10x_dist: Edge
+      tenx_dist: Edge
     secrets: inherit
 
   filebeat-debug-native:
     if: ${{ inputs.publish_filebeat_debug }}
     name: Filebeat Debug Native
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Filebeat-Debug
-      log10x_dist: Native
+      tenx_dist: Native
     secrets: inherit
 
   fluent-bit-jit:
     if: ${{ inputs.publish_fluent_bit }}
     name: Fluent-Bit JIT
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluent-Bit
-      log10x_dist: Edge
+      tenx_dist: Edge
     secrets: inherit
 
   fluent-bit-native:
     if: ${{ inputs.publish_fluent_bit }}
     name: Fluent-Bit Native
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluent-Bit
-      log10x_dist: Native
+      tenx_dist: Native
     secrets: inherit
 
   fluent-bit-debug-jit:
     if: ${{ inputs.publish_fluent_bit_debug }}
     name: Fluent-Bit Debug JIT
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluent-Bit-Debug
-      log10x_dist: Edge
+      tenx_dist: Edge
     secrets: inherit
 
   fluent-bit-debug-native:
     if: ${{ inputs.publish_fluent_bit_debug }}
     name: Fluent-Bit Debug Native
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluent-Bit-Debug
-      log10x_dist: Native
+      tenx_dist: Native
     secrets: inherit
 
   fluentd-jit:
     if: ${{ inputs.publish_fluentd }}
     name: Fluentd JIT
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluentd
-      log10x_dist: Edge
+      tenx_dist: Edge
     secrets: inherit
 
   fluentd-native:
     if: ${{ inputs.publish_fluentd }}
     name: Fluentd Native
-    uses: ./.github/workflows/publish_log10x_forwarder.yaml
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluentd
-      log10x_dist: Native
+      tenx_dist: Native
     secrets: inherit

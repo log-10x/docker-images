@@ -1,6 +1,6 @@
-# Log10x builder
+# 10x builder
 #
-FROM --platform=${BUILDPLATFORM:-linux/amd64} debian:bookworm-slim AS log10x-builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} debian:bookworm-slim AS tenx-builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -14,11 +14,11 @@ RUN VALIDATE_FLAVOR=$(echo "${FLAVOR}" | tr '[:upper:]' '[:lower:]') && \
     exit 1; \
 fi
 
-# Install curl, needed for Log10x install script
+# Install curl, needed for 10x install script
 #
 RUN apt-get update && apt-get install -y curl
 
-# Install Log10x
+# Install 10x
 #
 RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup
 
@@ -27,29 +27,29 @@ RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/instal
 #
 FROM --platform=${BUILDPLATFORM:-linux/amd64} fluent/fluent-bit:3.1.7
 
-# Manually setting up Log10x environment variables
+# Manually setting up 10x environment variables
 #
-ENV L1X_HOME=/opt/log10x-edge
-ENV L1X_BIN=/opt/log10x-edge/bin/log10x-edge
-ENV L1X_MODULES=/opt/log10x-edge/lib/app/modules
+ENV TENX_HOME=/opt/tenx-edge
+ENV TENX_BIN=/opt/tenx-edge/bin/tenx-edge
+ENV TENX_MODULES=/opt/tenx-edge/lib/app/modules
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV L1X_CONFIG=/etc/log10x/config
+ENV TENX_CONFIG=/etc/tenx/config
 
 # Copying a minimal shell from the builder
 #
-# This is needed because l1x.lua invokes the l1x pipeline runable by
+# This is needed because 'tenx.lua' invokes the 10x pipeline runable by
 # calling io.popen, which relies on a /bin/sh -c call to work
 #
 # For more info, see:
 # https://man7.org/linux/man-pages/man3/popen.3.html
 # https://www.lua.org/manual/5.4/manual.html#pdf-io.popen
 #
-COPY --from=log10x-builder /bin/dash /bin/sh
+COPY --from=tenx-builder /bin/dash /bin/sh
 
-# Copy log10x from builder
+# Copy 10x from builder
 #
-COPY --from=log10x-builder $L1X_CONFIG $L1X_CONFIG
-COPY --from=log10x-builder $L1X_HOME $L1X_HOME
+COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
+COPY --from=tenx-builder $TENX_HOME $TENX_HOME

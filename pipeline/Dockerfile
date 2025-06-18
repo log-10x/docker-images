@@ -37,9 +37,10 @@ RUN dnf install -y fluent-bit
 #
 RUN dnf clean all
 
-# Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to tenxFileAppender if desired
+# Make sure path for log file exists and is accessible to all users.
+# This allows changing TENX_LOG_APPENDER to tenxFileAppender if desired
 #
-RUN mkdir -p /var/log/tenx && chown 185 /var/log/tenx
+RUN mkdir -p /var/log/tenx && chmod 777 /var/log/tenx
 
 # Manually setting up 10x environment variables
 #
@@ -61,8 +62,12 @@ ENV TENX_LOG_APPENDER=tenxConsoleAppender
 COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
 COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 
+# Switch to ubuntu user and run from their home directory
+USER ubuntu
+WORKDIR /home/ubuntu
+
 ENTRYPOINT [ "sh", "-c", "exec $TENX_BIN \"${@}\"", "--" ]
 
 # Default run sample
 #
-CMD [ "run", "@run/config.yaml" ]
+CMD [ "@apps/dev" ]

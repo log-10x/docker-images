@@ -62,6 +62,10 @@ ENV TENX_LOG_APPENDER=tenxConsoleAppender
 COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
 COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 
+# Give permissions to the config
+#
+RUN chmod -R 777 $TENX_CONFIG
+
 # Create tenxuser user and run from their home directory
 RUN useradd -m -u 1000 tenxuser
 USER tenxuser

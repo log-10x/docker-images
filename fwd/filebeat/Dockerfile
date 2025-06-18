@@ -1,6 +1,6 @@
-# Log10x builder
+# 10x builder
 #
-FROM --platform=${BUILDPLATFORM:-linux/amd64} ubuntu:20.04 AS log10x-builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} ubuntu:20.04 AS tenx-builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -14,11 +14,11 @@ RUN VALIDATE_FLAVOR=$(echo "${FLAVOR}" | tr '[:upper:]' '[:lower:]') && \
     exit 1; \
 fi
 
-# Install curl, needed for Log10x install script
+# Install curl, needed for 10x install script
 #
 RUN apt-get update && apt-get install -y curl
 
-# Install Log10x
+# Install 10x
 #
 RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup
 
@@ -26,18 +26,18 @@ RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/instal
 # Filebeat image
 FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.elastic.co/beats/filebeat:8.5.1
 
-# Manually setting up Log10x environment variables
+# Manually setting up 10x environment variables
 #
-ENV TENX_HOME=/opt/log10x-edge
-ENV TENX_BIN=/opt/log10x-edge/bin/log10x-edge
-ENV TENX_MODULES=/opt/log10x-edge/lib/app/modules
+ENV TENX_HOME=/opt/tenx-edge
+ENV TENX_BIN=/opt/tenx-edge/bin/tenx-edge
+ENV TENX_MODULES=/opt/tenx-edge/lib/app/modules
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV TENX_CONFIG=/etc/log10x/config
+ENV TENX_CONFIG=/etc/tenx/config
 #
-# Running log10x with filebeat reporter launch configuration
+# Running 10x with filebeat reporter launch configuration
 # This can be overriden by deployment envs like k8s, when creating user config
 #
 ENV TENX_RUN_ARGS="@run/input/forwarder/filebeat/report/config.yaml @run/apps/edge/reporter"
@@ -50,10 +50,10 @@ USER root
 #
 RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | $TENX_BIN run $TENX_RUN_ARGS/' /usr/local/bin/docker-entrypoint
 
-# Copy log10x from builder
+# Copy 10x from builder
 #
-COPY --from=log10x-builder $TENX_CONFIG $TENX_CONFIG
-COPY --from=log10x-builder $TENX_HOME $TENX_HOME
+COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
+COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 
 # Switch back tothe filebeat user, same as original image
 #

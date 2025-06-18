@@ -1,15 +1,15 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi:8.10 AS log10x-builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi:8.10 AS tenx-builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG VERSION
 ARG FLAVOR="cloud"
 
-# Install curl, needed for Log10x install script
+# Install curl, needed for 10x install script
 #
 RUN dnf install -y curl
 
-# Install Log10x
+# Install 10x
 #
 RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup
 
@@ -19,15 +19,15 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG FLAVOR="cloud"
 
-# Install binutils (strings), needed for Log10x 'compile'
+# Install binutils (strings), needed for 10x 'compile'
 #
 RUN dnf install -y binutils
 
-# Install python3, needed for Log10x 'compile'
+# Install python3, needed for 10x 'compile'
 #
 RUN dnf install -y python38
 
-# Install fluent-bit, used for forwarding data from Log10x pipeline
+# Install fluent-bit, used for forwarding data from 10x pipeline
 # to any supported destination, needed for certain 'run' configurations
 #
 COPY ./fluent-bit.repo /etc/yum.repos.d/fluent-bit.repo
@@ -41,25 +41,25 @@ RUN dnf clean all
 #
 RUN mkdir -p /var/log/tenx && chown 185 /var/log/tenx
 
-# Manually setting up Log10x environment variables
+# Manually setting up 10x environment variables
 #
-ENV TENX_HOME=/opt/log10x-${FLAVOR}
-ENV TENX_BIN=/opt/log10x-${FLAVOR}/bin/log10x-${FLAVOR}
-ENV TENX_MODULES=/opt/log10x-${FLAVOR}/lib/app/modules
-ENV TENX_CONFIG=/etc/log10x/config
+ENV TENX_HOME=/opt/tenx-${FLAVOR}
+ENV TENX_BIN=/opt/tenx-${FLAVOR}/bin/tenx-${FLAVOR}
+ENV TENX_MODULES=/opt/tenx-${FLAVOR}/lib/app/modules
+ENV TENX_CONFIG=/etc/tenx/config
 
 # License key should be overriden by deployment (k8 helm) or config file
 #
 ENV TENX_LICENSE=NO-LICENSE
 
-# Set Log10x logger to console.
+# Set 10x logger to console.
 #
 ENV TENX_LOG_APPENDER=tenxConsoleAppender
 
-# Copy log10x from builder
+# Copy 10x from builder
 #
-COPY --from=log10x-builder $TENX_CONFIG $TENX_CONFIG
-COPY --from=log10x-builder $TENX_HOME $TENX_HOME
+COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
+COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 
 ENTRYPOINT [ "sh", "-c", "exec $TENX_BIN \"${@}\"", "--" ]
 

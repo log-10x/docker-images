@@ -45,7 +45,7 @@ jobs:
       - name: Prepare variables
         id: vars
         run: |
-          echo "image_name=tenx-pipeline" >> "$GITHUB_OUTPUT"
+          echo "image_name=pipeline-10x" >> "$GITHUB_OUTPUT"
           echo "docker_file=./main/pipeline/Dockerfile" >> "$GITHUB_OUTPUT"
           echo "docker_context=./main/pipeline" >> "$GITHUB_OUTPUT"
           echo "version_tag=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"

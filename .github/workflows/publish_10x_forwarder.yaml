@@ -77,19 +77,19 @@ jobs:
         id: vars
         run: |
           if [ "${{ inputs.forwarder_type }}" == "Filebeat" ]; then
-            echo "image_name=tenx-filebeat" >> "$GITHUB_OUTPUT"
+            echo "image_name=filebeat-10x" >> "$GITHUB_OUTPUT"
             echo "docker_file=./main/fwd/filebeat/Dockerfile" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.forwarder_type }}" == "Filebeat-Debug" ]; then
-            echo "image_name=tenx-filebeat" >> "$GITHUB_OUTPUT"
+            echo "image_name=filebeat-10x" >> "$GITHUB_OUTPUT"
             echo "docker_file=./main/fwd/filebeat/debug/Dockerfile" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.forwarder_type }}" == "Fluent-Bit" ]; then
-            echo "image_name=tenx-fluent-bit" >> "$GITHUB_OUTPUT"
+            echo "image_name=fluent-bit-10x" >> "$GITHUB_OUTPUT"
             echo "docker_file=./main/fwd/fluent-bit/Dockerfile" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.forwarder_type }}" == "Fluent-Bit-Debug" ]; then
-            echo "image_name=tenx-fluent-bit" >> "$GITHUB_OUTPUT"
+            echo "image_name=fluent-bit-10x" >> "$GITHUB_OUTPUT"
             echo "docker_file=./main/fwd/fluent-bit/debug/Dockerfile" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.forwarder_type }}" == "Fluentd" ]; then
-            echo "image_name=tenx-fluentd" >> "$GITHUB_OUTPUT"
+            echo "image_name=fluentd-10x" >> "$GITHUB_OUTPUT"
             echo "docker_file=./main/fwd/fluentd/Dockerfile" >> "$GITHUB_OUTPUT"
           fi
 

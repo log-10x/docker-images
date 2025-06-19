@@ -57,15 +57,15 @@ jobs:
         id: prep-vars
         run: |
           if [ "${{ inputs.image_type }}" == "Pipeline" ]; then
-            echo "image_name=tenx-pipeline" >> "$GITHUB_OUTPUT"
+            echo "image_name=pipeline-10x" >> "$GITHUB_OUTPUT"
             echo "download_pattern=\"*tenx-cloud*.rpm\"" >> "$GITHUB_OUTPUT"
             echo "prepare_cmd=mv tenx-cloud*.rpm ./main/pipeline/tenx.rpm" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.image_type }}" == "Lambda" ]; then
-            echo "image_name=tenx-lambda" >> "$GITHUB_OUTPUT"
+            echo "image_name=lambda-10x" >> "$GITHUB_OUTPUT"
             echo "download_pattern=\"*lambda*.zip\"" >> "$GITHUB_OUTPUT"
             echo "prepare_cmd=unzip tenx-lambda*.zip -d ./main/lambda/" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.image_type }}" == "Quarkus" ]; then
-            echo "image_name=tenx-quarkus" >> "$GITHUB_OUTPUT"
+            echo "image_name=quarkus-10x" >> "$GITHUB_OUTPUT"
             echo "download_pattern=\"*quarkus*.tar\"" >> "$GITHUB_OUTPUT"
             echo "prepare_cmd=tar -xvf tenx-quarkus*.tar -C ./main/quarkus/" >> "$GITHUB_OUTPUT"
           fi

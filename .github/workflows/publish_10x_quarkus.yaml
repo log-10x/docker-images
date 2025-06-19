@@ -56,7 +56,7 @@ jobs:
       - name: Prepare variables
         id: vars
         run: |
-          echo "image_name=tenx-quarkus" >> "$GITHUB_OUTPUT"
+          echo "image_name=quarkus-10x" >> "$GITHUB_OUTPUT"
           echo "docker_context=./main/quarkus" >> "$GITHUB_OUTPUT"
 
           if [ "${{ inputs.build_type }}" == "Standard" ]; then

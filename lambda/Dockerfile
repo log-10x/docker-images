@@ -1,10 +1,22 @@
-FROM public.ecr.aws/lambda/java:21
+FROM --platform=${BUILDPLATFORM:-linux/amd64} public.ecr.aws/lambda/java:21
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 # Installing the lambda insights extension, for in depth monitoring
 #
-RUN curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension.rpm && \
-    rpm -U lambda-insights-extension.rpm && \
-    rm -f lambda-insights-extension.rpm
+RUN case "$TARGETPLATFORM" in \
+    "linux/arm64") \
+      curl -O https://lambda-insights-extension-arm64.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension-arm64.rpm && \
+      rpm -U lambda-insights-extension-arm64.rpm && \
+      rm -f lambda-insights-extension-arm64.rpm ;; \
+    "linux/amd64") \
+      curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension.rpm && \
+      rpm -U lambda-insights-extension.rpm && \
+      rm -f lambda-insights-extension.rpm ;; \
+    *) \
+      echo "Unsupported TARGETPLATFORM: $TARGETPLATFORM" && exit 1 ;; \
+    esac
 
 # Install binutils (strings), needed for 10x 'compile'
 #

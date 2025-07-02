@@ -183,7 +183,7 @@ jobs:
       image_name: ${{ needs.prepare.outputs.image_name }}
     secrets: inherit
 
-  publish__latest_manifest:
+  publish_latest_manifest:
     name: Publish mutliarch manifest for latest
     needs:
       - prepare
@@ -196,4 +196,3 @@ jobs:
       docker_repo: ${{ needs.prepare.outputs.docker_repo }}
       image_name: ${{ needs.prepare.outputs.image_name }}
     secrets: inherit
-

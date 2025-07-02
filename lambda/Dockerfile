@@ -12,7 +12,7 @@ RUN dnf install -y binutils
 
 # Install python3, needed for 10x 'compile'
 #
-RUN dnf install -y python38
+RUN dnf install -y python3
 
 # Install fluent-bit, used for forwarding data from 10x pipeline
 # to any supported destination, needed for certain 'run' configurations
@@ -42,9 +42,9 @@ COPY ./config ${LAMBDA_TASK_ROOT}/lib/config
 ENV TENX_MODULES=${LAMBDA_TASK_ROOT}/lib/modules
 ENV TENX_CONFIG=${LAMBDA_TASK_ROOT}/lib/config
 
-# Copy l1x jar
+# Copy 10x jar
 #
-COPY ./lib/run-lambda-all.jar ${LAMBDA_TASK_ROOT}/lib/l1x-lambda.jar
+COPY ./lib/run-lambda-*-all.jar ${LAMBDA_TASK_ROOT}/lib/lambda-10x.jar
 
 # Set the CMD to the RunLambda handler
-CMD [ "com.log10x.l1x.main.run.lambda.RunLambda::handleRequest" ]
+CMD [ "com.log10x.ext.lambda.run.RunLambda::handleRequest" ]

@@ -1,0 +1,50 @@
+FROM public.ecr.aws/lambda/java:21
+
+# Installing the lambda insights extension, for in depth monitoring
+#
+RUN curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension.rpm && \
+    rpm -U lambda-insights-extension.rpm && \
+    rm -f lambda-insights-extension.rpm
+
+# Install binutils (strings), needed for 10x 'compile'
+#
+RUN dnf install -y binutils
+
+# Install python3, needed for 10x 'compile'
+#
+RUN dnf install -y python38
+
+# Install fluent-bit, used for forwarding data from 10x pipeline
+# to any supported destination, needed for certain 'run' configurations
+#
+COPY ./fluent-bit.repo /etc/yum.repos.d/fluent-bit.repo
+RUN dnf install -y fluent-bit
+
+# Clean up the dnf cache to reduce image size
+#
+RUN dnf clean all
+
+# License key should be overriden by deployment (k8 helm) or config file
+#
+ENV TENX_LICENSE=NO-LICENSE
+
+# Set 10x logger to console.
+#
+ENV TENX_LOG_APPENDER=tenxConsoleAppender
+
+# Copy the 10x modules and config
+#
+COPY ./modules ${LAMBDA_TASK_ROOT}/lib/modules
+COPY ./config ${LAMBDA_TASK_ROOT}/lib/config
+
+# Set env paths to modules and config
+#
+ENV TENX_MODULES=${LAMBDA_TASK_ROOT}/lib/modules
+ENV TENX_CONFIG=${LAMBDA_TASK_ROOT}/lib/config
+
+# Copy l1x jar
+#
+COPY ./lib/run-lambda-all.jar ${LAMBDA_TASK_ROOT}/lib/l1x-lambda.jar
+
+# Set the CMD to the RunLambda handler
+CMD [ "com.log10x.l1x.main.run.lambda.RunLambda::handleRequest" ]

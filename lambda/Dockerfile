@@ -12,7 +12,7 @@ RUN dnf install -y binutils
 
 # Install python3, needed for 10x 'compile'
 #
-# RUN dnf install -y python38
+RUN dnf install -y python3
 
 # Install fluent-bit, used for forwarding data from 10x pipeline
 # to any supported destination, needed for certain 'run' configurations

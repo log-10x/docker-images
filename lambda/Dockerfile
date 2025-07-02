@@ -7,14 +7,16 @@ ARG BUILDPLATFORM
 #
 RUN case "$TARGETPLATFORM" in \
     "linux/arm64") \
-      curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/arm64/lambda-insights-extension.rpm ;; \
+      curl -O https://lambda-insights-extension-arm64.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension-arm64.rpm && \
+      rpm -U lambda-insights-extension-arm64.rpm && \
+      rm -f lambda-insights-extension-arm64.rpm ;; \
     "linux/amd64") \
-      curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension.rpm ;; \
+      curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension.rpm && \
+      rpm -U lambda-insights-extension.rpm && \
+      rm -f lambda-insights-extension.rpm ;; \
     *) \
-      echo "Unsupported platform: $TARGETPLATFORM" && exit 1 ;; \
-    esac && \
-    rpm -U lambda-insights-extension.rpm && \
-    rm -f lambda-insights-extension.rpm
+      echo "Unsupported TARGETPLATFORM: $TARGETPLATFORM" && exit 1 ;; \
+    esac
 
 # Install binutils (strings), needed for 10x 'compile'
 #

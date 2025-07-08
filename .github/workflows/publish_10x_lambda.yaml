@@ -48,8 +48,8 @@ jobs:
               core.setFailed("Only GHCR hub is supported")
             }
 
-            if ("${{ inputs.build_type }}" != "Standard" && "${{ inputs.build_type }}" != "Debug") {
-              core.setFailed("Only Standard/Debug build types are supported")
+            if ("${{ inputs.build_type }}" != "Standard") {
+              core.setFailed("Only Standard build type is supported")
             }
 
       - name: Prepare variables

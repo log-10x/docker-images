@@ -13,6 +13,7 @@ on:
         type: choice
         options:
           - GHCR
+          - ECR
       build_type:
         required: true
         description: 'Type of build'
@@ -23,11 +24,14 @@ on:
   workflow_call:
     inputs:
       release_version:
-        required: true
         type: string
+        required: true
       docker_hub:
-        required: true
         type: string
+        required: true
+      build_type:
+        type: string
+        required: true
 
 jobs:
   prepare:
@@ -44,12 +48,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            if ("${{ inputs.docker_hub }}" != "GHCR") {
-              core.setFailed("Only GHCR hub is supported")
+            if ("${{ inputs.docker_hub }}" != "GHCR" && "${{ inputs.docker_hub }}" != "ECR") {
+              core.setFailed("Only GHCR or ECR hubs are supported")
             }
 
-            if ("${{ inputs.build_type }}" != "Standard" && "${{ inputs.build_type }}" != "Debug") {
-              core.setFailed("Only Standard/Debug build types are supported")
+            if ("${{ inputs.build_type }}" != "Standard") {
+              core.setFailed("Only Standard build type is supported")
             }
 
       - name: Prepare variables
@@ -60,18 +64,19 @@ jobs:
 
           if [ "${{ inputs.build_type }}" == "Standard" ]; then
             echo "docker_file=./main/lambda/Dockerfile" >> "$GITHUB_OUTPUT"
-            echo "version_tag=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"
+            echo "version_tag=${{ inputs.release_version }}" >> "$GITHUB_OUTPUT"
           fi
 
           if [ "${{ inputs.docker_hub }}" == "GHCR" ]; then
             echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "docker_repo=${{ vars.ECR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
           fi
 
   publish_x86:
-    name: "Build x86 Lambda ${{needs.prepare.outputs.version_tag}} to ${{inputs.docker_hub}}"
+    name: "Build x86 Lambda ${{ needs.prepare.outputs.version_tag }} to ${{ inputs.docker_hub }}"
     runs-on: ubuntu-latest
     needs: prepare
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -94,14 +99,24 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Public ECR
+        if: ${{ inputs.docker_hub == 'ECR' }}
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.ECR_ROLE_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.ECR_ROLE_SECRET_KEY }}
+          AWS_REGION: us-east-1
+
       - name: Docker meta
         id: docker-meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}
+          images: ${{ needs.prepare.outputs.docker_repo }}/${{ needs.prepare.outputs.image_name }}
           tags: |
-            type=raw,value=${{needs.prepare.outputs.version_tag}}-amd64
-            type=raw,value=latest-amd64,enable={{is_default_branch}}
+            type=raw,value=${{ needs.prepare.outputs.version_tag }}-amd64
+            type=raw,value=latest-amd64,enable={{is_default_branch }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -109,15 +124,15 @@ jobs:
       - name: Publish container
         uses: docker/build-push-action@v6
         with:
-          file: ${{needs.prepare.outputs.docker_file}}
-          context: ${{needs.prepare.outputs.docker_context}}
+          file: ${{ needs.prepare.outputs.docker_file }}
+          context: ${{ needs.prepare.outputs.docker_context }}
           platforms: linux/amd64
           push: true
           provenance: false
           tags: ${{ steps.docker-meta.outputs.tags }}
 
   publish_aarch64:
-    name: "Build aarch64 Lambda ${{needs.prepare.outputs.version_tag}} to ${{inputs.docker_hub}}"
+    name: "Build aarch64 Lambda ${{ needs.prepare.outputs.version_tag }} to ${{ inputs.docker_hub }}"
     runs-on: linux-arm64-2core
     needs: prepare
 
@@ -143,14 +158,24 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Public ECR
+        if: ${{ inputs.docker_hub == 'ECR' }}
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.ECR_ROLE_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.ECR_ROLE_SECRET_KEY }}
+          AWS_REGION: us-east-1
+
       - name: Docker meta
         id: docker-meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}
+          images: ${{ needs.prepare.outputs.docker_repo }}/${{ needs.prepare.outputs.image_name }}
           tags: |
-            type=raw,value=${{needs.prepare.outputs.version_tag}}-aarch64
-            type=raw,value=latest-aarch64,enable={{is_default_branch}}
+            type=raw,value=${{ needs.prepare.outputs.version_tag }}-aarch64
+            type=raw,value=latest-aarch64,enable={{is_default_branch }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -158,29 +183,29 @@ jobs:
       - name: Publish container
         uses: docker/build-push-action@v6
         with:
-          file: ${{needs.prepare.outputs.docker_file}}
-          context: ${{needs.prepare.outputs.docker_context}}
+          file: ${{ needs.prepare.outputs.docker_file }}
+          context: ${{ needs.prepare.outputs.docker_context }}
           platforms: linux/arm64
           push: true
           provenance: false
           tags: ${{ steps.docker-meta.outputs.tags }}
 
   publish_version_manifest:
-    name: Publish mutliarch manifest for ${{needs.prepare.outputs.version_tag}}
+    name: Publish multiarch manifest for ${{ needs.prepare.outputs.version_tag }}
     needs:
       - prepare
       - publish_x86
       - publish_aarch64
     uses: ./.github/workflows/update_multiarch_manifest.yaml
     with:
-      version_tag: ${{needs.prepare.outputs.version_tag}}
+      version_tag: ${{ needs.prepare.outputs.version_tag }}
       docker_hub: ${{ inputs.docker_hub }}
       docker_repo: ${{ needs.prepare.outputs.docker_repo }}
       image_name: ${{ needs.prepare.outputs.image_name }}
     secrets: inherit
 
   publish_latest_manifest:
-    name: Publish mutliarch manifest for latest
+    name: Publish multiarch manifest for latest
     needs:
       - prepare
       - publish_x86

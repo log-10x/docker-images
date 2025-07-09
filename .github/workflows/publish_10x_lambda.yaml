@@ -1,4 +1,4 @@
-name: Publish 10x Lambda continer
+name: Publish 10x Lambda container
 
 on:
   workflow_dispatch:

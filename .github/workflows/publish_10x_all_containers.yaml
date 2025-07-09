@@ -1,4 +1,4 @@
-name: Publish 10x continer (all)
+name: Publish 10x container (all)
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Publish 10x Pipeline continer
+name: Publish 10x Pipeline container
 
 on:
   workflow_dispatch:
@@ -141,7 +141,7 @@ jobs:
           tags: ${{ steps.docker-meta.outputs.tags }}
 
   publish_version_manifest:
-    name: Publish mutliarch manifest for ${{needs.prepare.outputs.version_tag}}
+    name: Publish multiarch manifest for ${{needs.prepare.outputs.version_tag}}
     needs:
       - prepare
       - publish_x86
@@ -155,7 +155,7 @@ jobs:
     secrets: inherit
 
   publish_latest_manifest:
-    name: Publish mutliarch manifest for latest
+    name: Publish multiarch manifest for latest
     needs:
       - prepare
       - publish_x86

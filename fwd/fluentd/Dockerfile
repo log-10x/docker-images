@@ -35,6 +35,7 @@ ARG BUILDPLATFORM
 ENV TENX_HOME=/opt/tenx-edge
 ENV TENX_BIN=/opt/tenx-edge/bin/tenx-edge
 ENV TENX_MODULES=/opt/tenx-edge/lib/app/modules
+ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config
@@ -43,5 +44,6 @@ ENV TENX_CONFIG=/etc/tenx/config
 
 # Copy 10x from builder
 #
+COPY --from=tenx-builder $TENX_SYMBOLS_PATH $TENX_SYMBOLS_PATH
 COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
 COPY --from=tenx-builder $TENX_HOME $TENX_HOME

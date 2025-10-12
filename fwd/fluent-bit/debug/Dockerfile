@@ -25,7 +25,7 @@ RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/instal
 
 # Fluent-bit image
 #
-FROM --platform=${BUILDPLATFORM:-linux/amd64} fluent/fluent-bit:3.1.7-debug
+FROM --platform=${BUILDPLATFORM:-linux/amd64} fluent/fluent-bit:4.1.1-debug
 
 # Manually setting up 10x environment variables
 #

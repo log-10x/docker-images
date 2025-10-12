@@ -25,7 +25,7 @@ RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/instal
 
 # Fluentd image
 #
-FROM --platform=${BUILDPLATFORM:-linux/amd64} fluent/fluentd-kubernetes-daemonset:v1.17-debian-elasticsearch8-1
+FROM --platform=${BUILDPLATFORM:-linux/amd64} fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch8-1
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM

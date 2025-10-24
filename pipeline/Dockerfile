@@ -49,9 +49,9 @@ ENV TENX_BIN=/opt/tenx-${FLAVOR}/bin/tenx-${FLAVOR}
 ENV TENX_MODULES=/opt/tenx-${FLAVOR}/lib/app/modules
 ENV TENX_CONFIG=/etc/tenx/config
 
-# License key should be overriden by deployment (k8 helm) or config file
+# API key should be overriden by deployment (k8 helm) or config file
 #
-ENV TENX_LICENSE=NO-LICENSE
+ENV TENX_API_KEY=NO-API-KEY
 
 # Set 10x logger to console.
 #

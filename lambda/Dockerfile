@@ -36,9 +36,9 @@ RUN dnf install -y fluent-bit
 #
 RUN dnf clean all
 
-# License key should be overriden by deployment (k8 helm) or config file
+# API key should be overriden by deployment (k8 helm) or config file
 #
-ENV TENX_LICENSE=NO-LICENSE
+ENV TENX_API_KEY=NO-API-KEY
 
 # Set 10x logger to console.
 #

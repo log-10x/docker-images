@@ -55,4 +55,5 @@ jobs:
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
+      build_type: "Standard"
     secrets: inherit

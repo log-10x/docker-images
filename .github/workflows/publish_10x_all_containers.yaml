@@ -51,9 +51,8 @@ jobs:
   Lambda:
     if: ${{ inputs.publish_lambda }}
     name: Lambda
-    uses: ./.github/workflows/publish_10x_single_container.yaml
+    uses: ./.github/workflows/publish_10x_lambda.yaml
     with:
       release_version: ${{ inputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
-      image_type: "Lambda"
     secrets: inherit

@@ -29,6 +29,9 @@ on:
       docker_hub:
         required: true
         type: string
+      build_type:
+        type: string
+        required: true
 
 jobs:
   prepare:

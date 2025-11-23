@@ -48,6 +48,7 @@ ENV TENX_HOME=/opt/tenx-${FLAVOR}
 ENV TENX_BIN=/opt/tenx-${FLAVOR}/bin/tenx-${FLAVOR}
 ENV TENX_MODULES=/opt/tenx-${FLAVOR}/lib/app/modules
 ENV TENX_CONFIG=/etc/tenx/config
+ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
 
 # API key should be overriden by deployment (k8 helm) or config file
 #
@@ -59,6 +60,7 @@ ENV TENX_LOG_APPENDER=tenxConsoleAppender
 
 # Copy 10x from builder
 #
+COPY --from=tenx-builder $TENX_SYMBOLS_PATH $TENX_SYMBOLS_PATH
 COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
 COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 

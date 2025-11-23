@@ -50,10 +50,6 @@ ENV TENX_MODULES=/opt/tenx-${FLAVOR}/lib/app/modules
 ENV TENX_CONFIG=/etc/tenx/config
 ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
 
-# API key should be overriden by deployment (k8 helm) or config file
-#
-ENV TENX_API_KEY=NO-API-KEY
-
 # Set 10x logger to console.
 #
 ENV TENX_LOG_APPENDER=tenxConsoleAppender

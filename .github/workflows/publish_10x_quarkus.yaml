@@ -82,6 +82,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: main
 
       - name: Prepare release artifacts
         env:
@@ -129,6 +131,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: main
 
       - name: Prepare release artifacts
         env:

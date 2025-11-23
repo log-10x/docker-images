@@ -62,6 +62,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: main
 
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' }}
@@ -103,6 +105,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: main
 
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' }}

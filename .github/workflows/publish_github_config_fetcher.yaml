@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version_tag:
-        required: true
+        required: false
         type: string
-        description: 'Version tag of image'
+        description: 'Version tag of image (defaults to VERSION file)'
       docker_hub:
         required: true
         description: 'Which docker hub to publish to'
@@ -39,13 +39,27 @@ jobs:
               core.setFailed("Only GHCR hub is supported")
             }
 
+      - name: Checkout code for version
+        if: ${{ inputs.version_tag == '' }}
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: read_version
+        run: |
+          if [ -n "${{ inputs.version_tag }}" ]; then
+            VERSION="${{ inputs.version_tag }}"
+          else
+            VERSION=$(cat ext/github-config-fetcher/VERSION | tr -d '\n\r' | tr -d ' ')
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Prepare variables
         id: vars
         run: |
           echo "image_name=github-config-fetcher" >> "$GITHUB_OUTPUT"
           echo "docker_file=./main/ext/github-config-fetcher/Dockerfile" >> "$GITHUB_OUTPUT"
           echo "docker_context=./main/ext/github-config-fetcher" >> "$GITHUB_OUTPUT"
-          echo "version_tag=${{inputs.version_tag}}" >> "$GITHUB_OUTPUT"
+          echo "version_tag=${{ steps.read_version.outputs.VERSION }}" >> "$GITHUB_OUTPUT"
 
           if [ "${{ inputs.docker_hub }}" == "GHCR" ]; then
             echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"

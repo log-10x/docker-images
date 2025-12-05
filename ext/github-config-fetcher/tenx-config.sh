@@ -17,12 +17,17 @@ symbols_path=""
 print_usage() {
 	echo "Usage: $0 [options]"
 	echo "Options:"
-	echo "  --config-repo <repository>   Pipeline config repo. Use full url, including access token if needed (i.e. https://<TOKEN>@github.com/owner/my-config-repo.git)"
+	echo "  --config-repo <repository>   Pipeline config repo. Use full url (i.e. https://github.com/owner/my-config-repo.git)"
+	echo "                               Token can be provided via GITHUB_TOKEN env var or embedded in URL (https://<TOKEN>@github.com/...)"
 	echo "  --config-branch <branch>     Config branch name to checkout. If omitted, will use default repo branch."
-	echo "  --symbols-repo <repository>  Compiled symbols repo. Use full url, including access token if needed (i.e. https://<TOKEN>@github.com/owner/my-symbols-repo.git)"
+	echo "  --symbols-repo <repository>  Compiled symbols repo. Use full url (i.e. https://github.com/owner/my-symbols-repo.git)"
+	echo "                               Token can be provided via GITHUB_TOKEN env var or embedded in URL (https://<TOKEN>@github.com/...)"
 	echo "  --symbols-branch <branch>    Symbols branch name to checkout. If omitted, will use default repo branch."
 	echo "  --symbols-path <path>        Absolute path in the symbols repo where symbols reside. If omitted, entire repo is used"
 	echo "  -h, --help                   Show this help message."
+	echo ""
+	echo "Environment Variables:"
+	echo "  GITHUB_TOKEN                 GitHub access token. Will be automatically injected into repository URLs if not already present."
 }
 
 # Parse arguments
@@ -78,6 +83,13 @@ git_clone() {
 	local repo=$1
 	local branch=$2
 	local dest=$3
+
+	# If GITHUB_TOKEN env var is set and repo doesn't already have a token embedded
+	# (i.e., doesn't contain @github.com), inject the token into the URL
+	if [[ -n "$GITHUB_TOKEN" && "$repo" == *"github.com"* && "$repo" != *"@github.com"* ]]; then
+		# Inject token into GitHub URL
+		repo=$(echo "$repo" | sed 's|https://github.com|https://'"$GITHUB_TOKEN"'@github.com|')
+	fi
 
 	if [[ -z "$branch" ]]; then
 		git clone --single-branch "$repo" "$dest" || { echo "Error cloning $repo into $dest"; exit 1; }

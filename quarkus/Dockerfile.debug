@@ -122,9 +122,10 @@ COPY --chown=185 ./quarkus-app/*.jar /deployments/
 COPY --chown=185 ./quarkus-app/app/ /deployments/app/
 COPY --chown=185 ./quarkus-app/quarkus/ /deployments/quarkus/
 
-# Copy the 10x modules and config
-COPY --chown=185 ./quarkus-modules /etc/tenx/modules
-COPY --chown=185 ./quarkus-config /etc/tenx/default-config
+# Copy the 10x modules, config, and symbols
+COPY --chown=185 ./tenx-modules /etc/tenx/modules
+COPY --chown=185 ./tenx-config /etc/tenx/config
+COPY --chown=185 ./tenx-symbols /etc/tenx/symbols
 
 # Make sure path for log file exists, so TENX_LOG_APPENDER can be changed to tenxFileAppender if desired
 RUN mkdir -p /var/log/tenx && chown 185 /var/log/tenx
@@ -136,7 +137,8 @@ EXPOSE 8080
 USER 185
 
 ENV TENX_MODULES=/etc/tenx/modules
-ENV TENX_CONFIG=/etc/tenx/default-config
+ENV TENX_CONFIG=/etc/tenx/config
+ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
 
 ENV TENX_LOG_APPENDER=tenxConsoleAppender
 ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.httpclient.allowRestrictedHeaders=host -Dfile.encoding=UTF-8"

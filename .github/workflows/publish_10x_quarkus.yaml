@@ -90,8 +90,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
         run: |
           gh release download ${{ inputs.release_version }} --pattern "*quarkus*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
+          gh release download ${{ inputs.release_version }} --pattern "tenx-config-*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
+          gh release download ${{ inputs.release_version }} --pattern "tenx-modules-*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
+          mkdir -p ./main/quarkus/tenx-symbols
+          gh release download ${{ inputs.release_version }} --pattern "tenx-symbols-*.10x.tar" -R https://github.com/${{ vars.RELEASE_REPO }} -D ./main/quarkus/tenx-symbols
           ls -la
           tar -xzvf tenx-quarkus*.tar.gz -C ./main/quarkus/
+          mkdir -p ./main/quarkus/tenx-config
+          tar -xzvf tenx-config-*.tar.gz -C ./main/quarkus/tenx-config/
+          mkdir -p ./main/quarkus/tenx-modules
+          tar -xzvf tenx-modules-*.tar.gz -C ./main/quarkus/tenx-modules/
 
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' }}
@@ -139,8 +147,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
         run: |
           gh release download ${{ inputs.release_version }} --pattern "*quarkus*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
+          gh release download ${{ inputs.release_version }} --pattern "tenx-config-*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
+          gh release download ${{ inputs.release_version }} --pattern "tenx-modules-*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
+          mkdir -p ./main/quarkus/tenx-symbols
+          gh release download ${{ inputs.release_version }} --pattern "tenx-symbols-*.10x.tar" -R https://github.com/${{ vars.RELEASE_REPO }} -D ./main/quarkus/tenx-symbols
           ls -la
           tar -xzvf tenx-quarkus*.tar.gz -C ./main/quarkus/
+          mkdir -p ./main/quarkus/tenx-config
+          tar -xzvf tenx-config-*.tar.gz -C ./main/quarkus/tenx-config/
+          mkdir -p ./main/quarkus/tenx-modules
+          tar -xzvf tenx-modules-*.tar.gz -C ./main/quarkus/tenx-modules/
 
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' }}

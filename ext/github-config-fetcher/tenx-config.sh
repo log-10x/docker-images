@@ -92,9 +92,9 @@ git_clone() {
 	fi
 
 	if [[ -z "$branch" ]]; then
-		git clone --single-branch "$repo" "$dest" || { echo "Error cloning $repo into $dest"; exit 1; }
+		git clone --depth 1 --single-branch "$repo" "$dest" || { echo "Error cloning $repo into $dest"; exit 1; }
 	else
-		git clone --single-branch --branch "$branch" "$repo" "$dest" || { echo "Error cloning $repo into $dest (branch: $branch)"; exit 1; }
+		git clone --depth 1 --single-branch --branch "$branch" "$repo" "$dest" || { echo "Error cloning $repo into $dest (branch: $branch)"; exit 1; }
 	fi
 }
 

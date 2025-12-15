@@ -79,6 +79,31 @@ if [[ -z "$config_repo" ]]; then
 	fi
 fi
 
+echo "===== GitHub Config Fetcher v__VERSION__ ====="
+echo "Starting repository fetch operation..."
+
+if [[ -n "$config_repo" ]]; then
+	echo "Config repository: $config_repo"
+	if [[ -n "$config_branch" ]]; then
+		echo "  Branch: $config_branch"
+	else
+		echo "  Branch: (default)"
+	fi
+fi
+
+if [[ -n "$symbols_repo" ]]; then
+	echo "Symbols repository: $symbols_repo"
+	if [[ -n "$symbols_branch" ]]; then
+		echo "  Branch: $symbols_branch"
+	else
+		echo "  Branch: (default)"
+	fi
+	if [[ -n "$symbols_path" ]]; then
+		echo "  Path: $symbols_path"
+	fi
+fi
+echo ""
+
 git_clone() {
 	local repo=$1
 	local branch=$2
@@ -101,31 +126,47 @@ git_clone() {
 if [[ -n "$config_repo" ]]; then
 	config_clone_path="$dest_root/$dest_config"
 
+	echo "Cloning config repository..."
+	echo "  Destination: $config_clone_path"
+
 	mkdir -p "$config_clone_path" || { echo "Error creating directory $config_clone_path"; exit 1; }
 
 	git_clone "$config_repo" "$config_branch" "$config_clone_path"
+
+	echo "✓ Config repository cloned successfully"
+	echo ""
 fi
 
 if [[ -n "$symbols_repo" ]]; then
 	symbols_clone_path="$dest_root/$dest_config/$dest_symbols"
 
+	echo "Cloning symbols repository..."
+	echo "  Destination: $symbols_clone_path"
+
 	mkdir -p "$symbols_clone_path" || { echo "Error creating directory $symbols_clone_path"; exit 1; }
 
 	if [[ -z "$symbols_path" ]]; then
 		git_clone "$symbols_repo" "$symbols_branch" "$symbols_clone_path"
+		echo "✓ Symbols repository cloned successfully"
 	else
 		tmp_symbols="/tmp/tenx-symbols"
+		echo "  Extracting from subfolder: $symbols_path"
 
 		git_clone "$symbols_repo" "$symbols_branch" "$tmp_symbols"
 
 		symbols_subfolder="$tmp_symbols/$symbols_path"
 
 		if [[ -d "$symbols_subfolder" && -n "$(ls -A "$symbols_subfolder")" ]]; then
+			echo "  Moving symbols from subfolder to destination..."
 			mv "$symbols_subfolder"/* "$symbols_clone_path" || { echo "Error moving symbols from $symbols_subfolder to $symbols_clone_path"; exit 1; }
+			echo "✓ Symbols extracted and moved successfully"
 		else
 			echo "Warning - symbols subfolder $symbols_subfolder doesn't exist or is empty"
 		fi
 
 		rm -rf "$tmp_symbols"
 	fi
+	echo ""
 fi
+
+echo "===== Fetch operation completed successfully ====="

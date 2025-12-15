@@ -105,6 +105,8 @@ jobs:
           push: true
           provenance: false
           tags: ${{ steps.docker-meta.outputs.tags }}
+          build-args: |
+            VERSION=${{needs.prepare.outputs.version_tag}}
 
   publish_aarch64:
     name: "Build aarch64 github config fetcher ${{inputs.version_tag}} to ${{inputs.docker_hub}}"
@@ -146,6 +148,8 @@ jobs:
           push: true
           provenance: false
           tags: ${{ steps.docker-meta.outputs.tags }}
+          build-args: |
+            VERSION=${{needs.prepare.outputs.version_tag}}
 
   publish_version_manifest:
     name: Publish multiarch manifest for ${{needs.prepare.outputs.version_tag}}

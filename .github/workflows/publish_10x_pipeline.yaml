@@ -1,0 +1,171 @@
+name: Publish 10x Pipeline container
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        description: '10x version to install'
+        type: string
+      docker_hub:
+        required: true
+        description: 'Which docker hub to publish to'
+        type: choice
+        options:
+          - GHCR
+
+  workflow_call:
+    inputs:
+      release_version:
+        required: true
+        type: string
+      docker_hub:
+        required: true
+        type: string
+
+jobs:
+  prepare:
+    name: Checks parameters and sets vars
+    runs-on: ubuntu-latest
+    outputs:
+      image_name: ${{ steps.vars.outputs.image_name }}
+      version_tag: ${{ steps.vars.outputs.version_tag }}
+      docker_file: ${{ steps.vars.outputs.docker_file }}
+      docker_context: ${{ steps.vars.outputs.docker_context }}
+      docker_repo: ${{ steps.vars.outputs.docker_repo }}
+    steps:
+      - name: Check parameters
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if ("${{ inputs.docker_hub }}" != "GHCR") {
+              core.setFailed("Only GHCR hub is supported")
+            }
+
+      - name: Prepare variables
+        id: vars
+        run: |
+          echo "image_name=pipeline-10x" >> "$GITHUB_OUTPUT"
+          echo "docker_file=./main/pipeline/Dockerfile" >> "$GITHUB_OUTPUT"
+          echo "docker_context=./main/pipeline" >> "$GITHUB_OUTPUT"
+          echo "version_tag=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ inputs.docker_hub }}" == "GHCR" ]; then
+            echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish_x86:
+    name: "Build x86 Pipeline ${{needs.prepare.outputs.version_tag}} to ${{inputs.docker_hub}}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    needs: prepare
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: main
+
+      - name: Login to GHCR
+        if: ${{ inputs.docker_hub == 'GHCR' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: docker-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}
+          tags: |
+            type=raw,value=${{needs.prepare.outputs.version_tag}}-amd64
+            type=raw,value=latest-amd64,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Publish container
+        uses: docker/build-push-action@v6
+        with:
+          file: ${{needs.prepare.outputs.docker_file}}
+          context: ${{needs.prepare.outputs.docker_context}}
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          build-args: |
+            VERSION=${{inputs.release_version}}
+          tags: ${{ steps.docker-meta.outputs.tags }}
+
+  publish_aarch64:
+    name: "Build aarch64 Pipeline ${{needs.prepare.outputs.version_tag}} to ${{inputs.docker_hub}}"
+    runs-on: linux-arm64-2core
+    timeout-minutes: 12
+    needs: prepare
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: main
+
+      - name: Login to GHCR
+        if: ${{ inputs.docker_hub == 'GHCR' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: docker-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}
+          tags: |
+            type=raw,value=${{needs.prepare.outputs.version_tag}}-aarch64
+            type=raw,value=latest-aarch64,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Publish container
+        uses: docker/build-push-action@v6
+        with:
+          file: ${{needs.prepare.outputs.docker_file}}
+          context: ${{needs.prepare.outputs.docker_context}}
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          build-args: |
+            VERSION=${{inputs.release_version}}
+          tags: ${{ steps.docker-meta.outputs.tags }}
+
+  publish_version_manifest:
+    name: Publish multiarch manifest for ${{needs.prepare.outputs.version_tag}}
+    needs:
+      - prepare
+      - publish_x86
+      - publish_aarch64
+    uses: ./.github/workflows/update_multiarch_manifest.yaml
+    with:
+      version_tag: ${{needs.prepare.outputs.version_tag}}
+      docker_hub: ${{ inputs.docker_hub }}
+      docker_repo: ${{ needs.prepare.outputs.docker_repo }}
+      image_name: ${{ needs.prepare.outputs.image_name }}
+    secrets: inherit
+
+  publish_latest_manifest:
+    name: Publish multiarch manifest for latest
+    needs:
+      - prepare
+      - publish_x86
+      - publish_aarch64
+    uses: ./.github/workflows/update_multiarch_manifest.yaml
+    with:
+      version_tag: latest
+      docker_hub: ${{ inputs.docker_hub }}
+      docker_repo: ${{ needs.prepare.outputs.docker_repo }}
+      image_name: ${{ needs.prepare.outputs.image_name }}
+    secrets: inherit

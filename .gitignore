@@ -1,0 +1,26 @@
+# Log file
+*.log
+
+# Package Files #
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Ignore build directories
+**/bin/
+**/build/
+**/dist/
+**/out/
+**/target/
+
+# Ignore directories created by Docker when mounting volumes
+**/node_modules/
+**/tmp/
+**/.sass-cache/
+**/.cache/
+
+# OSx generated
+.DS_Store

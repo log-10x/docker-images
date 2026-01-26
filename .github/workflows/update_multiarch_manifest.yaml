@@ -1,0 +1,55 @@
+name: Updates manifest for multi arch release
+
+on:
+  workflow_call:
+    inputs:
+      version_tag:
+        required: true
+        type: string
+      docker_hub:
+        required: true
+        type: string
+      docker_repo:
+        required: true
+        type: string
+      image_name:
+        required: true
+        type: string
+
+jobs:
+  prepare:
+    name: Checks parameters and sets vars
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check parameters
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if ("${{ inputs.docker_hub }}" != "GHCR") {
+              core.setFailed("Only GHCR hub is supported")
+            }
+
+  publish_manifest:
+    name: Publish proper manifest
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create manifest for ${{inputs.version_tag}}
+        run: |
+          docker manifest create ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}} \
+            --amend ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}-amd64 \
+            --amend ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}-aarch64
+
+          docker manifest annotate --arch amd64 --os linux ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}} ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}-amd64
+          docker manifest annotate --arch arm64 --os linux ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}} ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}-aarch64
+          docker manifest inspect ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}
+
+          docker manifest push ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}

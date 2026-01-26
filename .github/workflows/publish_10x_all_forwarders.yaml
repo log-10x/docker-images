@@ -1,0 +1,201 @@
+name: Publish All 10x forwarders
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: false
+        description: '10x version to install (leave empty for latest)'
+        type: string
+        default: ''
+      docker_hub:
+        required: true
+        description: 'Which docker hub to publish to'
+        type: choice
+        options:
+          - GHCR
+      publish_filebeat:
+        required: true
+        type: boolean
+        description: Filebeat
+        default: true
+      publish_filebeat_debug:
+        required: true
+        type: boolean
+        description: Filebeat (Debug)
+        default: true
+      publish_fluent_bit:
+        required: true
+        type: boolean
+        description: Fluent Bit
+        default: true
+      publish_fluent_bit_debug:
+        required: true
+        type: boolean
+        description: Fluent Bit (Debug)
+        default: true
+      publish_fluentd:
+        required: true
+        type: boolean
+        description: Fluentd
+        default: true
+
+jobs:
+  prepare:
+    name: Checks parameters and sets vars
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.resolve.outputs.release_version }}
+    steps:
+      - name: Check parameters
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if ("${{ inputs.docker_hub }}" != "GHCR") {
+              core.setFailed("Only GHCR hub is supported")
+            }
+
+      - name: Resolve release version
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ inputs.release_version }}" ]; then
+            echo "Using provided version: ${{ inputs.release_version }}"
+            echo "release_version=${{ inputs.release_version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "No version provided, fetching latest release..."
+            LATEST=$(gh release view --repo https://github.com/${{ vars.RELEASE_REPO }} --json tagName -q '.tagName')
+            echo "Latest release: $LATEST"
+            echo "release_version=$LATEST" >> "$GITHUB_OUTPUT"
+          fi
+
+  filebeat-jit:
+    if: ${{ inputs.publish_filebeat }}
+    name: Filebeat JIT
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Filebeat
+      tenx_dist: Edge
+    secrets: inherit
+
+  filebeat-native:
+    if: ${{ inputs.publish_filebeat }}
+    name: Filebeat Native
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Filebeat
+      tenx_dist: Native
+    secrets: inherit
+
+  filebeat-debug-jit:
+    if: ${{ inputs.publish_filebeat_debug }}
+    name: Filebeat Debug JIT
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Filebeat-Debug
+      tenx_dist: Edge
+    secrets: inherit
+
+  filebeat-debug-native:
+    if: ${{ inputs.publish_filebeat_debug }}
+    name: Filebeat Debug Native
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Filebeat-Debug
+      tenx_dist: Native
+    secrets: inherit
+
+  fluent-bit-jit:
+    if: ${{ inputs.publish_fluent_bit }}
+    name: Fluent-Bit JIT
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit
+      tenx_dist: Edge
+    secrets: inherit
+
+  fluent-bit-native:
+    if: ${{ inputs.publish_fluent_bit }}
+    name: Fluent-Bit Native
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit
+      tenx_dist: Native
+    secrets: inherit
+
+  fluent-bit-debug-jit:
+    if: ${{ inputs.publish_fluent_bit_debug }}
+    name: Fluent-Bit Debug JIT
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit-Debug
+      tenx_dist: Edge
+    secrets: inherit
+
+  fluent-bit-debug-native:
+    if: ${{ inputs.publish_fluent_bit_debug }}
+    name: Fluent-Bit Debug Native
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit-Debug
+      tenx_dist: Native
+    secrets: inherit
+
+  fluentd-jit:
+    if: ${{ inputs.publish_fluentd }}
+    name: Fluentd JIT
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluentd
+      tenx_dist: Edge
+    secrets: inherit
+
+  fluentd-native:
+    if: ${{ inputs.publish_fluentd }}
+    name: Fluentd Native
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluentd
+      tenx_dist: Native
+    secrets: inherit

@@ -1,0 +1,68 @@
+name: Publish All 10x containers
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: false
+        description: '10x version to install (leave empty for latest)'
+        type: string
+        default: ''
+      docker_hub:
+        required: true
+        description: 'Which docker hub to publish to'
+        type: choice
+        options:
+          - GHCR
+      publish_pipeline:
+        required: true
+        type: boolean
+        description: Publish Pipeline
+        default: true
+      publish_quarkus:
+        required: true
+        type: boolean
+        description: Publish Quarkus
+        default: true
+jobs:
+  prepare:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.resolve.outputs.release_version }}
+    steps:
+      - name: Resolve release version
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ inputs.release_version }}" ]; then
+            echo "Using provided version: ${{ inputs.release_version }}"
+            echo "release_version=${{ inputs.release_version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "No version provided, fetching latest release..."
+            LATEST=$(gh release view --repo https://github.com/${{ vars.RELEASE_REPO }} --json tagName -q '.tagName')
+            echo "Latest release: $LATEST"
+            echo "release_version=$LATEST" >> "$GITHUB_OUTPUT"
+          fi
+
+  Pipeline:
+    if: ${{ inputs.publish_pipeline }}
+    needs: prepare
+    name: Pipeline
+    uses: ./.github/workflows/publish_10x_pipeline.yaml
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+    secrets: inherit
+
+  Quarkus:
+    if: ${{ inputs.publish_quarkus }}
+    needs: prepare
+    name: Quarkus
+    uses: ./.github/workflows/publish_10x_quarkus.yaml
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      build_type: "Standard"
+    secrets: inherit

@@ -1,0 +1,54 @@
+Log10x Forwarder Images
+Copyright 2025-2026 Log10x, Inc.
+
+These container images extend the following open source projects:
+
+================================================================================
+OpenTelemetry Collector Contrib
+================================================================================
+License: Apache License 2.0
+Source: https://github.com/open-telemetry/opentelemetry-collector-contrib
+Image: otel/opentelemetry-collector-contrib
+
+================================================================================
+Fluent Bit
+================================================================================
+License: Apache License 2.0
+Source: https://github.com/fluent/fluent-bit
+Image: fluent/fluent-bit
+
+================================================================================
+Fluentd
+================================================================================
+License: Apache License 2.0
+Source: https://github.com/fluent/fluentd
+Image: fluent/fluentd-kubernetes-daemonset
+
+================================================================================
+Filebeat
+================================================================================
+License: Elastic License 2.0
+Source: https://github.com/elastic/beats
+Image: docker.elastic.co/beats/filebeat
+Note: Elastic License 2.0 is not an open source license. See:
+      https://www.elastic.co/licensing/elastic-license
+
+================================================================================
+Logstash
+================================================================================
+License: Elastic License 2.0
+Source: https://github.com/elastic/logstash
+Image: docker.elastic.co/logstash/logstash
+Note: Elastic License 2.0 is not an open source license. See:
+      https://www.elastic.co/licensing/elastic-license
+
+================================================================================
+Log10x Components
+================================================================================
+The Log10x binaries included in these images are proprietary software
+and require a commercial license to use.
+
+License: Log10x Proprietary License
+Website: https://log10x.com
+Pricing: https://log10x.com/pricing
+Contact: sales@log10x.com

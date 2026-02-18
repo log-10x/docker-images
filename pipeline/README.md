@@ -1,6 +1,6 @@
 # 🔟❎ Pipeline
 
-Docker image of a Red Hat (ubi8) container with [Log10x Cloud](http://doc.log10x.com/home/install/#cloud)
+Docker image of a Red Hat (ubi8) container with [Log10x Cloud](https://doc.log10x.com/architecture/flavors/#cloud)
 
 ## Quick start
 
@@ -13,10 +13,10 @@ docker run ghcr.io/log-10x/log10x-pipeline:latest
 
 This image is bundled with all the tools that are required by Log10x cloud to work:
 
-- binutils and python38, which are needed for the [compile](http://doc.log10x.com/compile/) pipeline
-- [Fluentbit](https://fluentbit.io/), allowing for [cloud analyzer query](http://doc.log10x.com/run/apps/cloud/analyzer/#query) to emit data your destination of chioce.
+- binutils and python38, which are needed for the [compile](https://doc.log10x.com/compile/) pipeline
+- [Fluentbit](https://fluentbit.io/), allowing for [cloud analyzer query](https://doc.log10x.com/apps/cloud/streamer/#query) to emit data your destination of chioce.
 
-Visit our [pipeline deployment](http://doc.log10x.com/home/install/docker/#log10x-pipeline) documentation for more info about using this image.
+Visit our [pipeline deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
 
 ## K8 Deployment
 

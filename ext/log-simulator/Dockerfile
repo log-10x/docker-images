@@ -11,12 +11,16 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 LABEL org.opencontainers.image.documentation="https://doc.log10x.com"
 LABEL org.opencontainers.image.source="https://github.com/log-10x/docker-images"
 
+RUN groupadd -r simulator && useradd -r -g simulator -d /app -s /sbin/nologin simulator
+
 WORKDIR /app
 
 RUN pip install boto3
 
-COPY log-simulator.py .
-COPY sample.txt .
+COPY --chown=simulator:simulator log-simulator.py .
+COPY --chown=simulator:simulator sample.txt .
+
+USER simulator
 
 ENTRYPOINT ["python", "log-simulator.py"]
 CMD ["--source", "local", "--file", "sample.txt", "--rate", "10"]

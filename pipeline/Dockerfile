@@ -16,7 +16,7 @@ RUN dnf install -y curl
 #
 RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi:8.10
+FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ubi-minimal:8.10
 
 # OCI Image Labels
 LABEL org.opencontainers.image.title="Log10x Pipeline"
@@ -33,23 +33,26 @@ ARG BUILDPLATFORM
 ARG FLAVOR="cloud"
 
 # Install binutils (strings), needed for 10x 'compile'
+# Install shadow-utils, needed for useradd
 #
-RUN dnf install -y binutils
+RUN microdnf install -y binutils shadow-utils
 
 # Install python3, needed for 10x 'compile'
 #
-RUN dnf install -y python39 && \
-    python3 -m pip install --no-cache-dir --upgrade pip setuptools urllib3
+RUN microdnf install -y python39 python39-pip && \
+    python3 -m pip install --no-cache-dir --upgrade pip setuptools urllib3 && \
+    rpm -e --nodeps python39-pip python39-pip-wheel \
+                    python39-setuptools python39-setuptools-wheel 2>/dev/null; true
 
 # Install fluent-bit, used for forwarding data from 10x pipeline
 # to any supported destination, needed for certain 'run' configurations
 #
 COPY ./fluent-bit.repo /etc/yum.repos.d/fluent-bit.repo
-RUN dnf install -y fluent-bit
+RUN microdnf install -y fluent-bit
 
-# Clean up the dnf cache to reduce image size
+# Clean up the microdnf cache to reduce image size
 #
-RUN dnf clean all
+RUN microdnf clean all
 
 # Make sure path for log file exists and is accessible to all users.
 # This allows changing TENX_LOG_APPENDER to tenxFileAppender if desired

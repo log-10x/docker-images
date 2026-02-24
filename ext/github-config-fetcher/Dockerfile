@@ -15,12 +15,13 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG VERSION=unknown
 
-RUN mkdir -p /data && chown git:git /data
+RUN addgroup -S fetcher && adduser -S -G fetcher -h /data fetcher && \
+    mkdir -p /data && chown fetcher:fetcher /data
 
 COPY ./tenx-config.sh /
 RUN sed -i "s/__VERSION__/${VERSION}/g" /tenx-config.sh && \
     chmod +x /tenx-config.sh
 
-USER git
+USER fetcher
 
 ENTRYPOINT ["/tenx-config.sh"]

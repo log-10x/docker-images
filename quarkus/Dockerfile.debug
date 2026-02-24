@@ -79,7 +79,7 @@
 #   accessed directly. (example: "foo.example.com,bar.example.com")
 #
 ###
-FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/openjdk-21:1.18
+FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/openjdk-21:1.23
 
 # OCI Image Labels
 LABEL org.opencontainers.image.title="Log10x Quarkus Server (Debug)"
@@ -117,7 +117,8 @@ RUN dnf install -y binutils
 
 # Install python3, needed for 10x 'compile'
 #
-RUN dnf install -y python38
+RUN dnf install -y python39 && \
+    python3 -m pip install --no-cache-dir --upgrade pip setuptools urllib3
 
 # Install fluent-bit, used for forwarding data from 10x pipeline
 # to any supported destination, needed for certain 'run' configurations

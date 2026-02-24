@@ -12,7 +12,9 @@ on:
         description: 'Which docker hub to publish to'
         type: choice
         options:
+          - All
           - GHCR
+          - DockerHub
 
   workflow_call:
     inputs:
@@ -33,13 +35,16 @@ jobs:
       docker_file: ${{ steps.vars.outputs.docker_file }}
       docker_context: ${{ steps.vars.outputs.docker_context }}
       docker_repo: ${{ steps.vars.outputs.docker_repo }}
+      dockerhub_repo: ${{ steps.vars.outputs.dockerhub_repo }}
+      docker_images: ${{ steps.vars.outputs.docker_images }}
     steps:
       - name: Check parameters
         uses: actions/github-script@v7
         with:
           script: |
-            if ("${{ inputs.docker_hub }}" != "GHCR") {
-              core.setFailed("Only GHCR hub is supported")
+            const validHubs = ["GHCR", "DockerHub", "All"];
+            if (!validHubs.includes("${{ inputs.docker_hub }}")) {
+              core.setFailed("docker_hub must be one of: GHCR, DockerHub, All")
             }
 
       - name: Prepare variables
@@ -49,13 +54,28 @@ jobs:
           echo "docker_file=./main/pipeline/Dockerfile" >> "$GITHUB_OUTPUT"
           echo "docker_context=./main/pipeline" >> "$GITHUB_OUTPUT"
           echo "version_tag=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"
+          echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "dockerhub_repo=docker.io/${{ vars.DOCKERHUB_REPO_NAME }}" >> "$GITHUB_OUTPUT"
 
-          if [ "${{ inputs.docker_hub }}" == "GHCR" ]; then
-            echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
+          IMAGES=""
+          if [ "${{ inputs.docker_hub }}" == "GHCR" ] || [ "${{ inputs.docker_hub }}" == "All" ]; then
+            IMAGES="${{ vars.GHCR_REPO_NAME }}/pipeline-10x"
           fi
+          if [ "${{ inputs.docker_hub }}" == "DockerHub" ] || [ "${{ inputs.docker_hub }}" == "All" ]; then
+            if [ -n "$IMAGES" ]; then
+              IMAGES=$(printf '%s\n%s' "$IMAGES" "docker.io/${{ vars.DOCKERHUB_REPO_NAME }}/pipeline-10x")
+            else
+              IMAGES="docker.io/${{ vars.DOCKERHUB_REPO_NAME }}/pipeline-10x"
+            fi
+          fi
+          {
+            echo 'docker_images<<EOF'
+            echo "$IMAGES"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
   publish_x86:
-    name: "Build x86 Pipeline ${{needs.prepare.outputs.version_tag}} to ${{inputs.docker_hub}}"
+    name: "Build x86 Pipeline ${{needs.prepare.outputs.version_tag}}"
     runs-on: ubuntu-latest
     timeout-minutes: 12
     needs: prepare
@@ -67,18 +87,25 @@ jobs:
           path: main
 
       - name: Login to GHCR
-        if: ${{ inputs.docker_hub == 'GHCR' }}
+        if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Docker Hub
+        if: ${{ inputs.docker_hub == 'DockerHub' || inputs.docker_hub == 'All' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Docker meta
         id: docker-meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}
+          images: ${{needs.prepare.outputs.docker_images}}
           tags: |
             type=raw,value=${{needs.prepare.outputs.version_tag}}-amd64
             type=raw,value=latest-amd64,enable={{is_default_branch}}
@@ -99,7 +126,7 @@ jobs:
           tags: ${{ steps.docker-meta.outputs.tags }}
 
   publish_aarch64:
-    name: "Build aarch64 Pipeline ${{needs.prepare.outputs.version_tag}} to ${{inputs.docker_hub}}"
+    name: "Build aarch64 Pipeline ${{needs.prepare.outputs.version_tag}}"
     runs-on: linux-arm64-2core
     timeout-minutes: 12
     needs: prepare
@@ -111,18 +138,25 @@ jobs:
           path: main
 
       - name: Login to GHCR
-        if: ${{ inputs.docker_hub == 'GHCR' }}
+        if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Docker Hub
+        if: ${{ inputs.docker_hub == 'DockerHub' || inputs.docker_hub == 'All' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Docker meta
         id: docker-meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}
+          images: ${{needs.prepare.outputs.docker_images}}
           tags: |
             type=raw,value=${{needs.prepare.outputs.version_tag}}-aarch64
             type=raw,value=latest-aarch64,enable={{is_default_branch}}
@@ -154,6 +188,7 @@ jobs:
       docker_hub: ${{ inputs.docker_hub }}
       docker_repo: ${{ needs.prepare.outputs.docker_repo }}
       image_name: ${{ needs.prepare.outputs.image_name }}
+      dockerhub_repo: ${{ needs.prepare.outputs.dockerhub_repo }}
     secrets: inherit
 
   publish_latest_manifest:
@@ -168,4 +203,5 @@ jobs:
       docker_hub: ${{ inputs.docker_hub }}
       docker_repo: ${{ needs.prepare.outputs.docker_repo }}
       image_name: ${{ needs.prepare.outputs.image_name }}
+      dockerhub_repo: ${{ needs.prepare.outputs.dockerhub_repo }}
     secrets: inherit

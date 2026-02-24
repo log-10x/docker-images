@@ -1,7 +1,7 @@
 # Copyright (c) 2025-2026 Log10x, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine/git:v2.45.2
+FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine/git:v2.52.0
 
 # OCI Image Labels - Community Tool (no Log10x license required)
 LABEL org.opencontainers.image.title="Log10x Config Fetcher"
@@ -15,8 +15,12 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG VERSION=unknown
 
+RUN mkdir -p /data && chown git:git /data
+
 COPY ./tenx-config.sh /
 RUN sed -i "s/__VERSION__/${VERSION}/g" /tenx-config.sh && \
     chmod +x /tenx-config.sh
+
+USER git
 
 ENTRYPOINT ["/tenx-config.sh"]

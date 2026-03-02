@@ -110,7 +110,9 @@ RUN microdnf install -y binutils
 # Install python3, needed for 10x 'compile'
 #
 RUN microdnf install -y python3 python3-pip && \
-    python3 -m pip install --no-cache-dir --upgrade pip setuptools urllib3
+    python3 -m pip install --no-cache-dir --upgrade pip setuptools urllib3 && \
+    rpm -e --nodeps python3-pip python3-pip-wheel \
+                    python3-setuptools python3-setuptools-wheel 2>/dev/null; true
 
 # Install fluent-bit, used for forwarding data from 10x pipeline
 # to any supported destination, needed for certain 'run' configurations

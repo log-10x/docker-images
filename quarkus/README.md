@@ -1,6 +1,6 @@
 # 🔟❎ Quarkus
 
-Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/architecture/pipeline/) on demand with [Log10x Cloud](https://doc.log10x.com/architecture/flavors/#cloud) capabilities.
+Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/engine/pipeline/) on demand with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud) capabilities.
 
 ## Quick start
 
@@ -18,7 +18,7 @@ Additionally, this image is bundled with all the tools that are required by Log1
 - binutils and python39, which are needed for the [compile](https://doc.log10x.com/compile/) pipeline
 - [Fluentbit](https://fluentbit.io/), allowing for [cloud analyzer query](https://doc.log10x.com/apps/cloud/streamer/#query) to emit data your destination of chioce.
 
-Visit our [quarkus deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
+Visit our [Cloud Streamer deployment](https://doc.log10x.com/apps/cloud/streamer/deploy/) documentation for more info about using this image.
 
 ## K8 Deployment
 

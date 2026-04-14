@@ -26,6 +26,11 @@ on:
         type: boolean
         description: Publish Quarkus
         default: true
+      publish_edge:
+        required: true
+        type: boolean
+        description: Publish Edge
+        default: true
 jobs:
   prepare:
     name: Resolve version
@@ -67,4 +72,14 @@ jobs:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       build_type: "Standard"
+    secrets: inherit
+
+  Edge:
+    if: ${{ inputs.publish_edge }}
+    needs: prepare
+    name: Edge
+    uses: ./.github/workflows/publish_10x_edge.yaml
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
     secrets: inherit

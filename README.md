@@ -5,17 +5,25 @@ This repository holds and publishes the docker files for the public releases of 
 Log10x is an **Observability runtime**, it is to log/trace data what Chrome V8 is to JavaScript:
 an engine for dynamically optimizing execution with the goal improving performance and reducing the cost of data processing.
 
+## Edge
+
+Docker image of a lightweight Debian (bookworm-slim) container with [Log10x Edge](https://doc.log10x.com/engine/flavors/#edge) as a GraalVM native binary.
+
+Designed for [sidecar deployments](https://doc.log10x.com/engine/launcher/sidecar/) alongside log forwarders (Fluentd, Fluent Bit, OTel Collector), providing real-time log/trace optimization at the edge with minimal resource footprint.
+
+Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
+
 ## Pipeline
 
-Docker image of a Red Hat (ubi8) container with [Log10x Cloud](https://doc.log10x.com/architecture/flavors/#cloud)
+Docker image of a Red Hat (ubi8) container with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud)
 
-Visit our [pipeline deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
+Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
 
 ## Quarkus
 
-Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/architecture/pipeline/) on demand with [Log10x Cloud](https://doc.log10x.com/architecture/flavors/#cloud) capabilities.
+Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/engine/pipeline/) on demand with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud) capabilities.
 
-Visit our [quarkus deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
+Visit our [Cloud Streamer deployment](https://doc.log10x.com/apps/cloud/streamer/deploy/) documentation for more info about using this image.
 
 ## License
 

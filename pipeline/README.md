@@ -1,6 +1,6 @@
 # 🔟❎ Pipeline
 
-Docker image of a Red Hat (ubi8) container with [Log10x Cloud](https://doc.log10x.com/architecture/flavors/#cloud)
+Docker image of a Red Hat (ubi8) container with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud)
 
 ## Quick start
 

@@ -7,7 +7,7 @@ configuration (e.g., Fluent Bit output to Datadog, Splunk, Elasticsearch).
 
 Environment variables:
     TENX_API_KEY    - Log10x API key for licensing and metrics
-    TENX_APP        - 10x app to run: @apps/edge/reporter, @apps/edge/regulator, or @apps/edge/optimizer
+    TENX_APP        - 10x app to run: @apps/reporter or @apps/reducer (default: reporter)
     TENX_EXTRA_ARGS - Optional extra CLI arguments for the 10x engine (space-separated)
 
 Output destination is controlled by the 10x pipeline config, not this handler.

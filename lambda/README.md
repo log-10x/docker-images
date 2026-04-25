@@ -44,7 +44,7 @@ aws logs put-subscription-filter \
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `TENX_API_KEY` | Yes | Log10x API key |
-| `TENX_APP` | No | `@apps/edge/reporter`, `@apps/edge/regulator`, or `@apps/edge/optimizer` (default: reporter) |
+| `TENX_APP` | No | `@apps/reporter` or `@apps/reducer` (default: reporter) |
 | `TENX_EXTRA_ARGS` | No | Additional CLI arguments for the 10x engine |
 
 Output destination is controlled by the 10x pipeline config via Fluent Bit output plugins. Set env vars for your destination:

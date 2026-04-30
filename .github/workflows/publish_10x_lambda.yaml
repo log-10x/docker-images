@@ -1,21 +1,19 @@
 name: Publish 10x Lambda container
 
 # Builds the lambda-10x runtime image (Java/Quarkus retriever-as-Lambda,
-# see ./lambda/Dockerfile) and publishes to GHCR + Docker Hub. Modeled
-# on publish_10x_quarkus.yaml.
+# see ./lambda/Dockerfile) and publishes a multi-arch manifest (amd64 +
+# arm64) to GHCR + Docker Hub. Modeled on publish_10x_quarkus.yaml.
 #
 # Image format constraints (per ./lambda/Dockerfile):
-# - linux/amd64 only — Lambda functions in the demo deploy as x86_64.
-#   Add an aarch64 job + manifest list when arm64 Lambda support is
-#   needed (mirror publish_10x_quarkus.yaml's two-arch + multiarch
-#   manifest pattern).
-# - --provenance=false on buildx, otherwise Lambda rejects the OCI
-#   manifest at CreateFunction time.
+# - --provenance=false --sbom=false on buildx, otherwise Lambda rejects
+#   the OCI manifest at CreateFunction time.
+# - Each arch is built single-platform (linux/amd64 or linux/arm64) and
+#   tagged with an arch suffix; a follow-up manifest job joins them into
+#   the version-only tag that consumers reference.
 #
 # Pre-requisite: the matching engine release must include the
 # tenx-lambda-<version>.tar.gz artifact (produced by engine's
-# lambda_build.yaml — wire into the engine release flow before running
-# this for the first time).
+# lambda_build.yaml).
 
 on:
   workflow_dispatch:
@@ -136,12 +134,9 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{needs.prepare.outputs.docker_images}}
-          # No -amd64 suffix or multi-arch manifest yet — single-arch
-          # publish for now. If aarch64 is added later, switch to the
-          # quarkus pattern (suffix per arch + manifest list job).
           tags: |
-            type=raw,value=${{needs.prepare.outputs.version_tag}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{needs.prepare.outputs.version_tag}}-amd64
+            type=raw,value=latest-amd64,enable={{is_default_branch}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -158,3 +153,78 @@ jobs:
           tags: ${{ steps.docker-meta.outputs.tags }}
           build-args: |
             ENGINE_VERSION=${{ inputs.release_version }}
+
+  publish_aarch64:
+    name: "Build aarch64 Lambda ${{needs.prepare.outputs.version_tag}}"
+    runs-on: linux-arm64-2core
+    timeout-minutes: 12
+    needs: prepare
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          path: main
+
+      - name: Prepare release artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download ${{ inputs.release_version }} --pattern "tenx-lambda-*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
+          ls -la
+          tar -xzvf tenx-lambda-*.tar.gz -C ./main/lambda/
+
+      - name: Login to GHCR
+        if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        if: ${{ inputs.docker_hub == 'DockerHub' || inputs.docker_hub == 'All' }}
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker meta
+        id: docker-meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{needs.prepare.outputs.docker_images}}
+          tags: |
+            type=raw,value=${{needs.prepare.outputs.version_tag}}-aarch64
+            type=raw,value=latest-aarch64,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Publish container
+        uses: docker/build-push-action@v7
+        with:
+          file: ${{needs.prepare.outputs.docker_file}}
+          context: ${{needs.prepare.outputs.docker_context}}
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          sbom: false
+          tags: ${{ steps.docker-meta.outputs.tags }}
+          build-args: |
+            ENGINE_VERSION=${{ inputs.release_version }}
+
+  publish_version_manifest:
+    name: Publish multiarch manifest for ${{needs.prepare.outputs.version_tag}}
+    needs:
+      - prepare
+      - publish_x86
+      - publish_aarch64
+    uses: ./.github/workflows/update_multiarch_manifest.yaml
+    with:
+      version_tag: ${{needs.prepare.outputs.version_tag}}
+      docker_hub: ${{ inputs.docker_hub }}
+      docker_repo: ${{needs.prepare.outputs.docker_repo}}
+      image_name: ${{needs.prepare.outputs.image_name}}
+      dockerhub_repo: ${{needs.prepare.outputs.dockerhub_repo}}
+    secrets: inherit

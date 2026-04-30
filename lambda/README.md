@@ -8,13 +8,13 @@ This image is **not** built locally — it's built and published by [`.github/wo
 
 1. Downloads `tenx-lambda-<version>.tar.gz` from the matching engine release (produced by `engine/.github/workflows/lambda_build.yaml`). The tarball contains the run-lambda shadow jar + Lambda-flavored `log4j2.yaml` + LICENSE.
 2. Extracts the tarball into the Docker build context alongside this `Dockerfile`.
-3. `docker buildx build --platform linux/amd64 --provenance=false --sbom=false` against this Dockerfile.
-4. Pushes to `docker.io/log10x/lambda-10x:<version>` and `ghcr.io/log-10x/lambda-10x:<version>`.
+3. `docker buildx build --provenance=false --sbom=false` per arch (linux/amd64 + linux/arm64).
+4. Pushes to `docker.io/log10x/lambda-10x:<version>` and `ghcr.io/log-10x/lambda-10x:<version>` as a multi-arch manifest joining both arches. Consumers pull the variant matching their Lambda function's `architectures` setting.
 
 ## Image format constraints
 
-- **`linux/amd64` only.** The demo's Lambda functions deploy as x86_64. To add arm64 later, extend `publish_10x_lambda.yaml` with a second build job + manifest-list union (see `publish_10x_quarkus.yaml` for the pattern).
 - **`--provenance=false --sbom=false`** on the buildx invocation, otherwise Lambda rejects the OCI manifest at `CreateFunction` time.
+- Single-arch tags (`<version>-amd64`, `<version>-aarch64`) are also pushed and remain pullable directly if you ever need to pin a specific arch.
 
 ## What the image contains
 

@@ -15,12 +15,14 @@
 #   ./LICENSE
 #
 # Image format constraints:
-# - linux/amd64 only — Lambda functions in the demo deploy as x86_64.
-#   If arm64 is needed later, extend publish_10x_lambda.yaml with a
-#   second build job + a manifest-list union (see publish_10x_quarkus.yaml
-#   for the pattern).
 # - --provenance=false --sbom=false on buildx, otherwise Lambda rejects
-#   the OCI manifest.
+#   the OCI manifest at CreateFunction time.
+# - The Dockerfile itself is arch-agnostic (both base images —
+#   `log10x/quarkus-10x` and `public.ecr.aws/lambda/java:21` — are
+#   multi-arch). publish_10x_lambda.yaml builds linux/amd64 and
+#   linux/arm64 separately and joins them into a multi-arch manifest at
+#   the version-only tag, so consumers can pull the variant matching
+#   their function's `architectures` setting.
 
 ARG ENGINE_VERSION
 ARG ENGINE_IMAGE=log10x/quarkus-10x:${ENGINE_VERSION}

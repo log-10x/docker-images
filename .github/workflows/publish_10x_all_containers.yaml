@@ -31,6 +31,11 @@ on:
         type: boolean
         description: Publish Edge
         default: true
+      publish_lambda:
+        required: true
+        type: boolean
+        description: Publish Lambda
+        default: true
 jobs:
   prepare:
     name: Resolve version
@@ -79,6 +84,21 @@ jobs:
     needs: prepare
     name: Edge
     uses: ./.github/workflows/publish_10x_edge.yaml
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+    secrets: inherit
+
+  # Lambda must run AFTER Quarkus — its Dockerfile pulls
+  # `FROM log10x/quarkus-10x:${ENGINE_VERSION}` and would fail if the
+  # quarkus tag for this version isn't on Docker Hub yet.
+  Lambda:
+    if: ${{ inputs.publish_lambda }}
+    needs:
+      - prepare
+      - Quarkus
+    name: Lambda
+    uses: ./.github/workflows/publish_10x_lambda.yaml
     with:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}

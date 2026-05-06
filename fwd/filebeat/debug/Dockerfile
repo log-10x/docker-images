@@ -55,7 +55,7 @@ ENV TENX_CONFIG=/etc/tenx/config
 # Running 10x with filebeat reporter launch configuration
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV TENX_RUN_ARGS="@run/input/forwarder/filebeat/report/config.yaml @run/apps/edge/reporter"
+ENV TENX_RUN_ARGS="@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver receiverReadOnly true"
 
 # Switch to root in order to be able to perform the installation and modification
 #

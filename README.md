@@ -29,17 +29,23 @@ Visit our [Cloud Streamer deployment](https://doc.log10x.com/apps/cloud/streamer
 
 This repository is licensed under the [Apache License 2.0](LICENSE).
 
-### Important: Log10x Product License Required
+### Log10x Product License
 
 This repository contains Dockerfiles and build tooling for Log10x containers.
 While the build files are open source, **the Log10x binaries installed in
-these images require a commercial license to use.**
+these images require a license to use.**
 
 | What's Open Source | What Requires License |
 |-------------------|----------------------|
 | Dockerfiles in this repo | Log10x binaries installed in images |
 | Build scripts | Running Log10x containers |
 | Container configuration | Log10x engine features |
+
+Every image ships with a built-in **limited** license so it runs out of the box. To unlock the full engine, pass your own `license.jwt` at run time:
+
+```console
+-e TENX_LICENSE_KEY="$(cat license.jwt)"
+```
 
 **Get a Log10x License:**
 - [Pricing](https://log10x.com/pricing)

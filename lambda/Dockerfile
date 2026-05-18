@@ -26,6 +26,7 @@
 
 ARG ENGINE_VERSION
 ARG ENGINE_IMAGE=log10x/quarkus-10x:${ENGINE_VERSION}
+ARG LICENSE_JWT
 
 # Stage 1: pull tenx-home (config / modules / symbols) from the matching
 # quarkus image so the Lambda image always tracks the engine release —
@@ -54,6 +55,7 @@ ENV TENX_HOME=/var/task/tenx-home \
     TENX_MODULES=/var/task/tenx-home/modules \
     TENX_SYMBOLS_PATH=/var/task/tenx-home/config/data/shared/symbols \
     TENX_LOG_APPENDER=tenxConsoleAppender \
-    TENX_LOG_PATH=/tmp/
+    TENX_LOG_PATH=/tmp/ \
+    TENX_LICENSE_KEY=${LICENSE_JWT}
 
 CMD [ "com.log10x.ext.lambda.RetrieverHandler::handleRequest" ]

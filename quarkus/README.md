@@ -9,6 +9,8 @@ Run the latest release with:
 docker run ghcr.io/log-10x/log10x-quarkus:latest
 ```
 
+The image ships with a built-in limited license. For the full engine, download your own from [console.log10x.com](https://console.log10x.com) and pass it as `-e TENX_LICENSE_KEY="$(cat license.jwt)"`. See [log10x.com/pricing](https://log10x.com/pricing).
+
 ## Under the hood
 
 This image is built on [Quarkus](https://quarkus.io/), the Supersonic Subatomic Java Framework.

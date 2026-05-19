@@ -25,6 +25,10 @@ Multi-stage build:
 
 Entry point: `com.log10x.ext.lambda.RetrieverHandler::handleRequest`.
 
+## License
+
+The image ships with a built-in limited license. For the full engine, set the Lambda function's `TENX_LICENSE_KEY` env var to a JWT downloaded from [console.log10x.com](https://console.log10x.com) — the `terraform-aws-tenx-retriever-lambda` module exposes it as an input variable. See [log10x.com/pricing](https://log10x.com/pricing).
+
 ## Manual build (only for debugging the Dockerfile)
 
 The workflow handles publishing — manual builds are only useful for iterating on the Dockerfile itself.

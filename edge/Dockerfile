@@ -29,6 +29,7 @@ LABEL com.log10x.license.url="https://log10x.com/pricing"
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
+ARG LICENSE_JWT
 
 # Make sure path for log file exists and is accessible to all users.
 # This allows changing TENX_LOG_APPENDER to tenxFileAppender if desired
@@ -42,6 +43,7 @@ ENV TENX_BIN=/opt/tenx-edge/bin/tenx-edge
 ENV TENX_MODULES=/opt/tenx-edge/lib/app/modules
 ENV TENX_CONFIG=/etc/tenx/config
 ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
+ENV TENX_LICENSE_KEY=${LICENSE_JWT}
 
 # Set 10x logger to console.
 #

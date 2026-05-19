@@ -9,6 +9,8 @@ Run the latest release with:
 docker run ghcr.io/log-10x/edge-10x:latest
 ```
 
+The image ships with a built-in limited license. For the full engine, download your own from [console.log10x.com](https://console.log10x.com) and pass it as `-e TENX_LICENSE_KEY="$(cat license.jwt)"`. See [log10x.com/pricing](https://log10x.com/pricing).
+
 ## Under the hood
 
 This image contains the Log10x Edge native binary — a GraalVM ahead-of-time compiled executable with no JVM dependency. It is designed for:

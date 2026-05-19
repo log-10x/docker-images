@@ -40,12 +40,15 @@ LABEL org.opencontainers.image.source="https://github.com/log-10x/docker-images"
 LABEL com.log10x.license.required="true"
 LABEL com.log10x.license.url="https://log10x.com/pricing"
 
+ARG LICENSE_JWT
+
 # Manually setting up 10x environment variables
 #
 ENV TENX_HOME=/opt/tenx-edge
 ENV TENX_BIN=/opt/tenx-edge/bin/tenx-edge
 ENV TENX_MODULES=/opt/tenx-edge/lib/app/modules
 ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
+ENV TENX_LICENSE_KEY=${LICENSE_JWT}
 #
 # Setting up the path to config files
 # This can be overriden by deployment envs like k8s, when creating user config

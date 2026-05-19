@@ -31,6 +31,7 @@ LABEL com.log10x.license.url="https://log10x.com/pricing"
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG FLAVOR="cloud"
+ARG LICENSE_JWT
 
 # Install binutils (strings), needed for 10x 'compile'
 # Install shadow-utils, needed for useradd
@@ -66,6 +67,7 @@ ENV TENX_BIN=/opt/tenx-${FLAVOR}/bin/tenx-${FLAVOR}
 ENV TENX_MODULES=/opt/tenx-${FLAVOR}/lib/app/modules
 ENV TENX_CONFIG=/etc/tenx/config
 ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
+ENV TENX_LICENSE_KEY=${LICENSE_JWT}
 
 # Set 10x logger to console.
 #

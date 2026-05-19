@@ -94,6 +94,7 @@ LABEL com.log10x.license.url="https://log10x.com/pricing"
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG DOCKER_IMAGE_TAG=unknown
+ARG LICENSE_JWT
 
 ENV LANGUAGE='en_US:en'
 
@@ -151,6 +152,7 @@ ENV TENX_MODULES=/etc/tenx/modules
 ENV TENX_CONFIG=/etc/tenx/config
 ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
 ENV TENX_DOCKER_IMAGE=${DOCKER_IMAGE_TAG}
+ENV TENX_LICENSE_KEY=${LICENSE_JWT}
 
 ENV TENX_LOG_APPENDER=tenxConsoleAppender
 ENV JAVA_OPTS_APPEND="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.httpclient.allowRestrictedHeaders=host -Dfile.encoding=UTF-8"

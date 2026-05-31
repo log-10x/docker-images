@@ -55,10 +55,10 @@ ENV TENX_LICENSE_KEY=${LICENSE_JWT}
 #
 ENV TENX_CONFIG=/etc/tenx/config
 #
-# Running 10x with filebeat reporter launch configuration
+# Running 10x with filebeat receiver launch configuration
 # This can be overriden by deployment envs like k8s, when creating user config
 #
-ENV TENX_RUN_ARGS="@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver receiverReadOnly true"
+ENV TENX_RUN_ARGS="@run/input/forwarder/filebeat @apps/receiver"
 
 # Switch to root in order to be able to perform the installation and modification
 #

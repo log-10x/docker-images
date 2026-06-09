@@ -33,10 +33,10 @@ ARG BUILDPLATFORM
 ARG FLAVOR="cloud"
 ARG LICENSE_JWT
 
-# Install binutils (strings), needed for 10x 'compile'
+# Install binutils (strings) + file (executable scanner), needed for 10x 'compile'
 # Install shadow-utils, needed for useradd
 #
-RUN microdnf install -y binutils shadow-utils
+RUN microdnf install -y binutils file shadow-utils
 
 # Install python3, needed for 10x 'compile'
 #

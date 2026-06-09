@@ -104,9 +104,9 @@ ENV LANGUAGE='en_US:en'
 #
 USER root
 
-# Install binutils (strings), needed for 10x 'compile'
+# Install binutils (strings) + file (executable scanner), needed for 10x 'compile'
 #
-RUN microdnf install -y binutils
+RUN microdnf install -y binutils file
 
 # Install python3, needed for 10x 'compile'
 #

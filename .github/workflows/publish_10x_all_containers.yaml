@@ -36,6 +36,11 @@ on:
         type: boolean
         description: Publish Lambda
         default: true
+      publish_compiler:
+        required: true
+        type: boolean
+        description: Publish Compiler
+        default: true
 jobs:
   prepare:
     name: Resolve version
@@ -63,6 +68,16 @@ jobs:
     needs: prepare
     name: Pipeline
     uses: ./.github/workflows/publish_10x_pipeline.yaml
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+    secrets: inherit
+
+  Compiler:
+    if: ${{ inputs.publish_compiler }}
+    needs: prepare
+    name: Compiler
+    uses: ./.github/workflows/publish_10x_compiler.yaml
     with:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}

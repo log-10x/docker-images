@@ -36,6 +36,11 @@ on:
         type: boolean
         description: Publish Lambda
         default: true
+      publish_compiler:
+        required: true
+        type: boolean
+        description: Publish Compiler
+        default: true
 jobs:
   prepare:
     name: Resolve version
@@ -63,6 +68,21 @@ jobs:
     needs: prepare
     name: Pipeline
     uses: ./.github/workflows/publish_10x_pipeline.yaml
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+    secrets: inherit
+
+  # Compiler must run AFTER Pipeline — its Dockerfile is
+  # `FROM log10x/pipeline-10x:${ENGINE_VERSION}` and would fail if the
+  # pipeline tag for this version isn't published yet.
+  Compiler:
+    if: ${{ inputs.publish_compiler }}
+    needs:
+      - prepare
+      - Pipeline
+    name: Compiler
+    uses: ./.github/workflows/publish_10x_compiler.yaml
     with:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}

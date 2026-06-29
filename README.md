@@ -1,6 +1,6 @@
 # 🔟❎ Docker Images
 
-This repository holds and publishes the docker files for the public releases of [Log10x](https://doc.log10x.com).
+This repository holds and publishes the docker files for the public releases of [Log10x](https://www.log10x.com/?utm_source=github&utm_medium=readme&utm_campaign=docker-images&utm_content=hero).
 
 Log10x is an **Observability runtime**, it is to log/trace data what Chrome V8 is to JavaScript:
 an engine for dynamically optimizing execution with the goal improving performance and reducing the cost of data processing.

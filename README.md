@@ -1,6 +1,6 @@
 # 🔟❎ Docker Images
 
-This repository holds and publishes the docker files for the public releases of [Log10x](https://doc.log10x.com).
+This repository holds and publishes the docker files for the public releases of [Log10x](https://www.log10x.com/?utm_source=github&utm_medium=readme&utm_campaign=docker-images&utm_content=hero).
 
 Log10x is an **Observability runtime**, it is to log/trace data what Chrome V8 is to JavaScript:
 an engine for dynamically optimizing execution with the goal improving performance and reducing the cost of data processing.
@@ -23,7 +23,7 @@ Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentat
 
 Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/engine/pipeline/) on demand with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud) capabilities.
 
-Visit our [Cloud Streamer deployment](https://doc.log10x.com/apps/cloud/streamer/deploy/) documentation for more info about using this image.
+Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
 
 ## License
 
@@ -48,6 +48,6 @@ Every image ships with a built-in **limited** license so it runs out of the box.
 ```
 
 **Get a Log10x License:**
-- [Pricing](https://log10x.com/pricing)
+- [Pricing](https://www.log10x.com/pricing?utm_source=github&utm_medium=readme&utm_campaign=docker-images&utm_content=footer)
 - [Documentation](https://doc.log10x.com)
 - [Contact Sales](mailto:sales@log10x.com)

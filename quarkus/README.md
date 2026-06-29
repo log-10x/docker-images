@@ -9,7 +9,7 @@ Run the latest release with:
 docker run ghcr.io/log-10x/log10x-quarkus:latest
 ```
 
-The image ships with a built-in limited license. For the full engine, download your own from [console.log10x.com](https://console.log10x.com) and pass it as `-e TENX_LICENSE_KEY="$(cat license.jwt)"`. See [log10x.com/pricing](https://log10x.com/pricing).
+The image ships with a built-in limited license. For the full engine, download your own from [console.log10x.com](https://console.log10x.com) and pass it as `-e TENX_LICENSE_KEY="$(cat license.jwt)"`. See [log10x.com/pricing](https://www.log10x.com/pricing?utm_source=github&utm_medium=readme&utm_campaign=docker-images&utm_content=inline).
 
 ## Under the hood
 
@@ -18,9 +18,9 @@ This image is built on [Quarkus](https://quarkus.io/), the Supersonic Subatomic 
 Additionally, this image is bundled with all the tools that are required by Log10x cloud to work:
 
 - binutils and python39, which are needed for the [compile](https://doc.log10x.com/compile/) pipeline
-- [Fluentbit](https://fluentbit.io/), allowing for [cloud analyzer query](https://doc.log10x.com/apps/cloud/streamer/#query) to emit data your destination of chioce.
+- [Fluentbit](https://fluentbit.io/), allowing pipeline output to be emitted to your destination of choice.
 
-Visit our [Cloud Streamer deployment](https://doc.log10x.com/apps/cloud/streamer/deploy/) documentation for more info about using this image.
+Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
 
 ## K8 Deployment
 

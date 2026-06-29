@@ -23,7 +23,7 @@ Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentat
 
 Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/engine/pipeline/) on demand with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud) capabilities.
 
-Visit our [Cloud Streamer deployment](https://doc.log10x.com/apps/cloud/streamer/deploy/) documentation for more info about using this image.
+Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
 
 ## License
 

@@ -9,6 +9,3 @@ values overlay), talking over loopback TCP.
 
 This Dockerfile is kept for **legacy rebuilds only**. See the current model:
 <https://doc.log10x.com/apps/receiver/deploy/>
-
-Filebeat remains an image swap (`log10x/filebeat-10x`) — it is the one genuinely
-embedded forwarder.

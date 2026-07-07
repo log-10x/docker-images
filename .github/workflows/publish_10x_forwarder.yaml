@@ -22,9 +22,6 @@ on:
         options:
           - Filebeat
           - Filebeat-Debug
-          - Fluent-Bit
-          - Fluent-Bit-Debug
-          - Fluentd
       tenx_dist:
         required: true
         type: choice
@@ -70,9 +67,9 @@ jobs:
               core.setFailed("docker_hub must be one of: GHCR, DockerHub, All")
             }
 
-            const validTypes = ["Filebeat", "Filebeat-Debug", "Fluent-Bit", "Fluent-Bit-Debug", "Fluentd"];
+            const validTypes = ["Filebeat", "Filebeat-Debug"];
             if (!validTypes.includes("${{ inputs.forwarder_type }}")) {
-              core.setFailed("Only Filebeat/Filebeat-Debug/Fluent-Bit/Fluent-Bit-Debug/Fluentd forwarders are supported")
+              core.setFailed("Only Filebeat/Filebeat-Debug forwarders are supported")
             }
 
             if ("${{ inputs.tenx_dist }}" != "Edge" && "${{ inputs.tenx_dist }}" != "Native") {
@@ -89,15 +86,6 @@ jobs:
           elif [ "${{ inputs.forwarder_type }}" == "Filebeat-Debug" ]; then
             IMAGE_NAME="filebeat-10x"
             echo "docker_file=./main/fwd/filebeat/debug/Dockerfile" >> "$GITHUB_OUTPUT"
-          elif [ "${{ inputs.forwarder_type }}" == "Fluent-Bit" ]; then
-            IMAGE_NAME="fluent-bit-10x"
-            echo "docker_file=./main/fwd/fluent-bit/Dockerfile" >> "$GITHUB_OUTPUT"
-          elif [ "${{ inputs.forwarder_type }}" == "Fluent-Bit-Debug" ]; then
-            IMAGE_NAME="fluent-bit-10x"
-            echo "docker_file=./main/fwd/fluent-bit/debug/Dockerfile" >> "$GITHUB_OUTPUT"
-          elif [ "${{ inputs.forwarder_type }}" == "Fluentd" ]; then
-            IMAGE_NAME="fluentd-10x"
-            echo "docker_file=./main/fwd/fluentd/Dockerfile" >> "$GITHUB_OUTPUT"
           fi
 
           echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
@@ -105,7 +93,7 @@ jobs:
           echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
           echo "dockerhub_repo=docker.io/${{ vars.DOCKERHUB_REPO_NAME }}" >> "$GITHUB_OUTPUT"
 
-          if [ "${{ inputs.forwarder_type }}" != "Fluent-Bit-Debug" ] && [ "${{ inputs.forwarder_type }}" != "Filebeat-Debug" ]; then
+          if [ "${{ inputs.forwarder_type }}" != "Filebeat-Debug" ]; then
             if [ "${{ inputs.tenx_dist }}" == "Edge" ]; then
               echo "version_tag=${{inputs.release_version}}-jit" >> "$GITHUB_OUTPUT"
             elif [ "${{ inputs.tenx_dist }}" == "Native" ]; then

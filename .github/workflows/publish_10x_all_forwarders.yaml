@@ -1,5 +1,11 @@
 name: Publish All 10x forwarders
 
+# NOTE: the Fluent Bit and Fluentd toggles below are RETIRED (image-swap model).
+# Fluentd/Fluent Bit now run 10x as a separate log10x/edge-10x SIDECAR container on
+# the upstream fluent charts, not a baked image. Kept for legacy rebuilds only --
+# do not use for new work. Filebeat stays live (the one genuinely embedded forwarder).
+# See https://doc.log10x.com/apps/receiver/deploy/
+
 on:
   workflow_dispatch:
     inputs:
@@ -25,6 +31,21 @@ on:
         required: true
         type: boolean
         description: Filebeat (Debug)
+        default: true
+      publish_fluent_bit:
+        required: true
+        type: boolean
+        description: Fluent Bit
+        default: true
+      publish_fluent_bit_debug:
+        required: true
+        type: boolean
+        description: Fluent Bit (Debug)
+        default: true
+      publish_fluentd:
+        required: true
+        type: boolean
+        description: Fluentd
         default: true
 
 jobs:
@@ -107,5 +128,83 @@ jobs:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Filebeat-Debug
+      tenx_dist: Native
+    secrets: inherit
+
+  fluent-bit-jit:
+    if: ${{ inputs.publish_fluent_bit }}
+    name: Fluent-Bit JIT
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit
+      tenx_dist: Edge
+    secrets: inherit
+
+  fluent-bit-native:
+    if: ${{ inputs.publish_fluent_bit }}
+    name: Fluent-Bit Native
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit
+      tenx_dist: Native
+    secrets: inherit
+
+  fluent-bit-debug-jit:
+    if: ${{ inputs.publish_fluent_bit_debug }}
+    name: Fluent-Bit Debug JIT
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit-Debug
+      tenx_dist: Edge
+    secrets: inherit
+
+  fluent-bit-debug-native:
+    if: ${{ inputs.publish_fluent_bit_debug }}
+    name: Fluent-Bit Debug Native
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluent-Bit-Debug
+      tenx_dist: Native
+    secrets: inherit
+
+  fluentd-jit:
+    if: ${{ inputs.publish_fluentd }}
+    name: Fluentd JIT
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluentd
+      tenx_dist: Edge
+    secrets: inherit
+
+  fluentd-native:
+    if: ${{ inputs.publish_fluentd }}
+    name: Fluentd Native
+    uses: ./.github/workflows/publish_10x_forwarder.yaml
+    needs:
+      - prepare
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+      forwarder_type: Fluentd
       tenx_dist: Native
     secrets: inherit

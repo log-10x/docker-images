@@ -1,5 +1,11 @@
 name: Publish All 10x forwarders
 
+# NOTE: the Fluent Bit and Fluentd toggles below are RETIRED (image-swap model).
+# Fluentd/Fluent Bit now run 10x as a separate log10x/edge-10x SIDECAR container on
+# the upstream fluent charts, not a baked image. Kept for legacy rebuilds only --
+# do not use for new work. Filebeat stays live (the one genuinely embedded forwarder).
+# See https://doc.log10x.com/apps/receiver/deploy/
+
 on:
   workflow_dispatch:
     inputs:

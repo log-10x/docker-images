@@ -1,5 +1,12 @@
 name: Publish 10x forwarder container
 
+# NOTE: the Fluent-Bit and Fluentd builds (fluent-bit-10x / fluentd-10x) are RETIRED.
+# That was the image-swap model (10x baked into the forwarder image, in-process).
+# Fluentd/Fluent Bit now run 10x as a separate log10x/edge-10x SIDECAR container on
+# the upstream fluent charts (see https://doc.log10x.com/apps/receiver/deploy/).
+# These build paths are kept for legacy rebuilds only -- do not use for new work.
+# Filebeat stays live: it is the one genuinely embedded forwarder.
+
 on:
   workflow_dispatch:
     inputs:

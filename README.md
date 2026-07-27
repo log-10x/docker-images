@@ -27,7 +27,7 @@ Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentat
 
 ## License
 
-This repository is licensed under the [Apache License 2.0](LICENSE).
+This repository is licensed under the [MIT License](LICENSE).
 
 ### Log10x Product License
 

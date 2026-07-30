@@ -123,3 +123,17 @@ jobs:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
     secrets: inherit
+
+  # The native flavor does NOT need Quarkus first: it stages tenx-home from the
+  # release's own config/modules/symbols artifacts rather than pulling it out of
+  # a quarkus-10x tag. Only `prepare`.
+  LambdaNative:
+    if: ${{ inputs.publish_lambda }}
+    needs:
+      - prepare
+    name: Lambda Native
+    uses: ./.github/workflows/publish_10x_lambda_native.yaml
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
+      docker_hub: ${{ inputs.docker_hub }}
+    secrets: inherit

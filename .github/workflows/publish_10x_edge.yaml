@@ -199,12 +199,89 @@ jobs:
       dockerhub_repo: ${{ needs.prepare.outputs.dockerhub_repo }}
     secrets: inherit
 
+  # Run the image before :latest points at it.
+  #
+  # The engine BINARY is behaviourally gated upstream: engine's build_all runs a
+  # native smoke on four platforms and blocks the release if a metric registry was
+  # dead-code-eliminated. None of that covers the IMAGE. Layer layout, TENX_HOME /
+  # TENX_CONFIG / TENX_MODULES paths, the entrypoint, the USER directive and file
+  # permissions are assembled here and were never executed -- `grep -rn "docker run"`
+  # across all 12 workflows in this repo returned zero.
+  #
+  # That is the same defect engine#78 fixed one layer down, and it lands on the
+  # artifact customers actually pull: every sidecar overlay in the Receiver docs
+  # pins edge-10x:latest.
+  #
+  # Pulls the PUSHED image back from the registry rather than testing a local
+  # build, so this verifies the bytes that shipped.
+  smoke_x86:
+    name: "Smoke x86 image ${{needs.prepare.outputs.version_tag}}"
+    needs:
+      - prepare
+      - publish_x86
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run the pushed image
+        run: |
+          IMAGE="${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{needs.prepare.outputs.version_tag}}-amd64"
+          echo "pulling $IMAGE"
+          docker pull "$IMAGE"
+          OUT=$(docker run --rm "$IMAGE" --version 2>&1 | head -3)
+          echo "$OUT"
+          echo "$OUT" | grep -q "10x engine" || {
+            echo "::error::the pushed image did not report an engine version. The binary is gated upstream, so this is the image assembly: entrypoint, TENX_HOME layout, or permissions."
+            exit 1
+          }
+          echo "$OUT" | grep -q "${{needs.prepare.outputs.version_tag}}" || {
+            echo "::error::image reports a different version than the tag it was pushed under. Expected ${{needs.prepare.outputs.version_tag}}."
+            exit 1
+          }
+
+  smoke_aarch64:
+    name: "Smoke aarch64 image ${{needs.prepare.outputs.version_tag}}"
+    needs:
+      - prepare
+      - publish_aarch64
+    runs-on: linux-arm64-2core
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run the pushed image
+        run: |
+          IMAGE="${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{needs.prepare.outputs.version_tag}}-aarch64"
+          echo "pulling $IMAGE"
+          docker pull "$IMAGE"
+          OUT=$(docker run --rm "$IMAGE" --version 2>&1 | head -3)
+          echo "$OUT"
+          echo "$OUT" | grep -q "10x engine" || {
+            echo "::error::the pushed image did not report an engine version. The binary is gated upstream, so this is the image assembly: entrypoint, TENX_HOME layout, or permissions."
+            exit 1
+          }
+          echo "$OUT" | grep -q "${{needs.prepare.outputs.version_tag}}" || {
+            echo "::error::image reports a different version than the tag it was pushed under. Expected ${{needs.prepare.outputs.version_tag}}."
+            exit 1
+          }
+
   publish_latest_manifest:
     name: Publish multiarch manifest for latest
     needs:
       - prepare
       - publish_x86
       - publish_aarch64
+      - smoke_x86
+      - smoke_aarch64
     uses: ./.github/workflows/update_multiarch_manifest.yaml
     with:
       version_tag: latest

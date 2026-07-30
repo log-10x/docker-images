@@ -63,3 +63,29 @@ ENV TENX_CONFIG=/etc/tenx/config
 COPY --from=tenx-builder $TENX_SYMBOLS_PATH $TENX_SYMBOLS_PATH
 COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
 COPY --from=tenx-builder $TENX_HOME $TENX_HOME
+
+# Create the engine's log directory and default its logs to stdout.
+#
+# Without this the image CANNOT START. The engine's default log4j2 appender is
+# tenxFileAppender at /var/log/tenx/tenx.log; the directory does not exist, and
+# for filebeat the image ends on a non-root USER that cannot create it. The
+# RollingFileAppender then fails to construct and that failure is FATAL:
+#
+#   Caused by: java.io.IOException: Could not create directory /var/log/tenx
+#   -> could not launch pipeline: 'run'
+#
+# Measured on the published log10x/filebeat-10x:1.1.25-native, same image, same
+# config, same license, only the user differing:
+#
+#   as USER filebeat (shipped default)   launch fails
+#   as root                              0 launch failures
+#
+# edge-10x has had both lines since it was written, which is why it works. The
+# forwarders never got them.
+#
+# The console appender is also the right default for a container regardless:
+# with the file appender only the startup banner reaches stdout, so `kubectl
+# logs` shows a healthy-looking pod while every WARN, ERROR and stack trace goes
+# to a file nobody reads. Set TENX_LOG_APPENDER=tenxFileAppender to opt back in.
+RUN mkdir -p /var/log/tenx && chmod 777 /var/log/tenx
+ENV TENX_LOG_APPENDER=tenxConsoleAppender

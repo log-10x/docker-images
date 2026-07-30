@@ -1,0 +1,188 @@
+name: Publish 10x Lambda Native container
+
+# Builds the retriever's GraalVM native Lambda image (./lambda/Dockerfile.native)
+# and publishes it as lambda-10x:<version>-native.
+#
+# Separate from publish_10x_lambda.yaml rather than a build_type switch on it,
+# for one structural reason: that workflow builds amd64 and arm64 and joins them
+# into a multi-arch manifest at the version tag. This image cannot do that.
+# `bootstrap` is a compiled binary, the engine builds it for linux/amd64 only,
+# and there is no second variant to join. Bolting an `if:`-disabled manifest job
+# onto the JVM workflow would leave the version tag meaning two different things
+# depending on an input.
+#
+# Image format constraints (per ./lambda/Dockerfile.native):
+# - --provenance=false --sbom=false on buildx, otherwise Lambda rejects the OCI
+#   manifest at CreateFunction time.
+# - Single-arch, single tag. Consumers must set the module's `architectures` to
+#   x86_64; a mismatch is accepted by CreateFunction and fails at the first
+#   invocation with an exec-format error.
+#
+# Pre-requisite: the matching engine release must carry FOUR artifacts —
+#   tenx-retriever-native-<version>-linux-amd64.tar.gz  (retriever_native_build.yaml)
+#   tenx-config-<version>.tar.gz                        (config_build.yaml)
+#   tenx-modules-<version>.tar.gz                       (config_build.yaml)
+#   tenx-symbols-<version>.10x.tar                      (config_build.yaml)
+# All four come from one release on purpose. The JVM image pulls tenx-home out
+# of a log10x/quarkus-10x tag that lags the engine, which is survivable for a
+# jar that resolves modules dynamically and is not survivable for a binary whose
+# reachable class set was fixed at compile time.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        description: '10x version to publish (must match an existing engine release carrying the retriever native artifact)'
+        type: string
+      docker_hub:
+        required: true
+        description: 'Which registry to publish to'
+        type: choice
+        options:
+          - All
+          - GHCR
+          - DockerHub
+
+  workflow_call:
+    inputs:
+      release_version:
+        required: true
+        type: string
+      docker_hub:
+        required: true
+        type: string
+
+jobs:
+  prepare:
+    name: Checks parameters and sets vars
+    runs-on: ubuntu-latest
+    outputs:
+      version_tag: ${{ steps.vars.outputs.version_tag }}
+      docker_images: ${{ steps.vars.outputs.docker_images }}
+    steps:
+      - name: Check parameters
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const validHubs = ["GHCR", "DockerHub", "All"];
+            if (!validHubs.includes("${{ inputs.docker_hub }}")) {
+              core.setFailed("docker_hub must be one of: GHCR, DockerHub, All")
+            }
+
+      - name: Prepare variables
+        id: vars
+        run: |
+          echo "version_tag=${{ inputs.release_version }}-native" >> "$GITHUB_OUTPUT"
+
+          IMAGES=""
+          if [ "${{ inputs.docker_hub }}" == "GHCR" ] || [ "${{ inputs.docker_hub }}" == "All" ]; then
+            IMAGES="${{ vars.GHCR_REPO_NAME }}/lambda-10x"
+          fi
+          if [ "${{ inputs.docker_hub }}" == "DockerHub" ] || [ "${{ inputs.docker_hub }}" == "All" ]; then
+            if [ -n "$IMAGES" ]; then
+              IMAGES=$(printf '%s\n%s' "$IMAGES" "docker.io/${{ vars.DOCKERHUB_REPO_NAME }}/lambda-10x")
+            else
+              IMAGES="docker.io/${{ vars.DOCKERHUB_REPO_NAME }}/lambda-10x"
+            fi
+          fi
+          {
+            echo 'docker_images<<EOF'
+            echo "$IMAGES"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+  publish_x86:
+    name: "Build x86 Lambda Native ${{needs.prepare.outputs.version_tag}}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: prepare
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          path: main
+
+      - name: Load embedded limited license JWT
+        run: echo "LICENSE_JWT=$(cat ./main/license.jwt)" >> "$GITHUB_ENV"
+
+      # gh CLI requires a token, but built-in GITHUB_TOKEN works for public repos
+      - name: Prepare release artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          REL="${{ inputs.release_version }}"
+          CTX=./main/lambda
+
+          # bootstrap + log4j2.yaml + LICENSE, extracted at the context root.
+          gh release download "$REL" \
+            --pattern "tenx-retriever-native-*-linux-amd64.tar.gz" \
+            -R https://github.com/${{ vars.RELEASE_REPO }}
+          tar -xzvf tenx-retriever-native-*-linux-amd64.tar.gz -C "$CTX/"
+
+          # A tar round-trip preserves the executable bit, but a release whose
+          # artifact was rebuilt by other means would not. The Dockerfile chmods
+          # anyway; this fails the build early rather than shipping an image
+          # whose only symptom is an init error with no log line.
+          test -f "$CTX/bootstrap" || { echo "::error::bootstrap missing from the retriever native tarball"; exit 1; }
+          file "$CTX/bootstrap"
+
+          mkdir -p "$CTX/tenx-config" "$CTX/tenx-modules" "$CTX/tenx-symbols"
+          gh release download "$REL" --pattern "tenx-config-*.tar.gz"  -R https://github.com/${{ vars.RELEASE_REPO }}
+          gh release download "$REL" --pattern "tenx-modules-*.tar.gz" -R https://github.com/${{ vars.RELEASE_REPO }}
+          tar -xzf tenx-config-*.tar.gz  -C "$CTX/tenx-config/"
+          tar -xzf tenx-modules-*.tar.gz -C "$CTX/tenx-modules/"
+
+          # The symbols archive is copied in AS a .tar — the engine reads the
+          # archive at TENX_SYMBOLS_PATH rather than a directory of files. Same
+          # handling as publish_10x_quarkus.yaml.
+          gh release download "$REL" --pattern "tenx-symbols-*.10x.tar" \
+            -R https://github.com/${{ vars.RELEASE_REPO }} -D "$CTX/tenx-symbols"
+
+          ls -la "$CTX"
+
+      - name: Login to GHCR
+        if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        if: ${{ inputs.docker_hub == 'DockerHub' || inputs.docker_hub == 'All' }}
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # No -amd64 suffix and no `latest` alias, unlike the JVM workflow. There is
+      # no second architecture to join, so the version tag is the final tag.
+      # `latest-native` is deliberately absent: a floating tag on an image whose
+      # architecture is baked in is how a working stack picks up a binary it
+      # cannot execute.
+      - name: Docker meta
+        id: docker-meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{needs.prepare.outputs.docker_images}}
+          tags: |
+            type=raw,value=${{needs.prepare.outputs.version_tag}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Publish container
+        uses: docker/build-push-action@v7
+        with:
+          file: ./main/lambda/Dockerfile.native
+          context: ./main/lambda
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          sbom: false
+          tags: ${{ steps.docker-meta.outputs.tags }}
+          build-args: |
+            LICENSE_JWT=${{ env.LICENSE_JWT }}

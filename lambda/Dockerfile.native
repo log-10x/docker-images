@@ -1,0 +1,76 @@
+# Lambda runtime image for the log10x Retriever, GraalVM native variant.
+#
+# Sits alongside ./Dockerfile rather than replacing it. That one targets the
+# managed java21 runtime, which supplies its own JVM and calls the handler
+# reflectively — it cannot host a native image. This one targets the custom
+# runtime, where the deployment package is a single executable named
+# `bootstrap` that drives the Lambda Runtime API itself (see the engine's
+# RetrieverBootstrap).
+#
+# Built by .github/workflows/publish_10x_lambda_native.yaml in this repo. That
+# workflow downloads four release artifacts from the engine release and stages
+# them into the build context, so the context is expected to contain:
+#
+#   ./bootstrap                   from tenx-retriever-native-<version>-linux-amd64.tar.gz
+#   ./log4j2.yaml                 same tarball
+#   ./LICENSE                     same tarball
+#   ./tenx-config/                from tenx-config-<version>.tar.gz
+#   ./tenx-modules/               from tenx-modules-<version>.tar.gz
+#   ./tenx-symbols/               from tenx-symbols-<version>.10x.tar (the .tar
+#                                 itself, not its contents — the engine reads
+#                                 the archive at TENX_SYMBOLS_PATH)
+#
+# tenx-home is staged from release artifacts rather than pulled out of a
+# log10x/quarkus-10x image the way ./Dockerfile does it. The quarkus image lags
+# the engine release, and pairing a binary from one version with config from
+# another is a mismatch nobody notices until a module the binary expects is
+# missing at runtime. All four artifacts here come from one release.
+#
+# Image format constraints:
+# - --provenance=false --sbom=false on buildx, otherwise Lambda rejects the OCI
+#   manifest at CreateFunction time.
+# - Single architecture. Unlike ./Dockerfile, this image is NOT arch-agnostic:
+#   `bootstrap` is a compiled binary. The tag carries no multi-arch manifest, so
+#   the consuming function's `architectures` must match what the binary was
+#   compiled for. A mismatch is accepted by CreateFunction and fails at the
+#   first invocation with an exec-format error.
+
+ARG LICENSE_JWT
+
+FROM public.ecr.aws/lambda/provided:al2023
+
+COPY tenx-config  ${LAMBDA_TASK_ROOT}/tenx-home/config/
+COPY tenx-modules ${LAMBDA_TASK_ROOT}/tenx-home/modules/
+COPY tenx-symbols ${LAMBDA_TASK_ROOT}/tenx-home/config/data/shared/symbols/
+
+# Lambda-flavored log4j2 config — sends everything to SYSTEM_OUT (CloudWatch).
+# Replaces the stock config, which wires rolling-file + Fluentd targets that
+# fail on Lambda's read-only filesystem.
+COPY log4j2.yaml ${LAMBDA_TASK_ROOT}/tenx-home/config/log4j2.yaml
+
+COPY LICENSE ${LAMBDA_TASK_ROOT}/LICENSE
+
+# The custom runtime executes ${LAMBDA_RUNTIME_DIR}/bootstrap. imageName in the
+# engine's run-lambda build.gradle is already 'bootstrap', so the artifact
+# arrives carrying the name the runtime looks for.
+#
+# chmod is not belt-and-braces: the tarball preserves the bit, but a context
+# staged any other way would not, and a non-executable bootstrap fails as an
+# init error with the sandbox torn down before any log line lands.
+COPY bootstrap ${LAMBDA_RUNTIME_DIR}/bootstrap
+RUN chmod 755 ${LAMBDA_RUNTIME_DIR}/bootstrap
+
+ARG LICENSE_JWT
+
+ENV TENX_HOME=/var/task/tenx-home \
+    TENX_CONFIG=/var/task/tenx-home/config \
+    TENX_MODULES=/var/task/tenx-home/modules \
+    TENX_SYMBOLS_PATH=/var/task/tenx-home/config/data/shared/symbols \
+    TENX_LOG_APPENDER=tenxConsoleAppender \
+    TENX_LOG_PATH=/tmp/ \
+    TENX_LICENSE_KEY=${LICENSE_JWT}
+
+# The handler string the managed runtime needed has no meaning here: the role is
+# selected by the ROLE env var, which RetrieverHandler reads directly. CMD is
+# passed to bootstrap as argv and ignored, but the base image requires one.
+CMD [ "retriever" ]

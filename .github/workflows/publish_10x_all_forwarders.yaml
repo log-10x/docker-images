@@ -92,6 +92,18 @@ jobs:
       tenx_dist: Edge
     secrets: inherit
 
+  # The ONLY job that may move :latest.
+  #
+  # Four flavors are built per forwarder (jit, native, and the two debug
+  # variants) and they all finish around the same time, so more than one setting
+  # publish_latest would race for the same tag and the winner would be whichever
+  # runner happened to finish last.
+  #
+  # Native rather than jit because that is the flavor GA ships and the one the
+  # Receiver docs are moving to. Filebeat rather than the others because the
+  # Fluent Bit and Fluentd image builds are retired (see the note at the top of
+  # publish_10x_forwarder.yaml); those forwarders run edge-10x as a sidecar and
+  # neither image is referenced anywhere in the docs.
   filebeat-native:
     if: ${{ inputs.publish_filebeat }}
     name: Filebeat Native
@@ -103,6 +115,7 @@ jobs:
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Filebeat
       tenx_dist: Native
+      publish_latest: true
     secrets: inherit
 
   filebeat-debug-jit:

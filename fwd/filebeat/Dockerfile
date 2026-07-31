@@ -102,4 +102,36 @@ COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 RUN mkdir -p /var/log/tenx && chmod 777 /var/log/tenx
 ENV TENX_LOG_APPENDER=tenxConsoleAppender
 
+# Second launch blocker, same shape as the one above, one layer deeper.
+#
+# The filebeat module's log4j2.yaml declares a filebeatRollingFile appender that
+# replays Filebeat's own log lines to wherever Filebeat would have written them:
+#
+#   fileName: "${env:filebeatPath:-${env:filebeatLogsPath}}..."
+#
+# log4j2 does NOT recurse into a `:-` default, so with both variables unset the
+# name resolves to the literal string, and log4j2 builds appenders eagerly --
+# a threshold filter that would disable this one does not stop construction:
+#
+#   Could not create directory /usr/share/filebeat/${env:filebeatLogsPath}
+#   -> could not launch pipeline: 'run'
+#
+# The module intends these to come from Filebeat's startup banner, parsed off
+# the pipe by the `match` extractor in stream.yaml. Measured: the banner does
+# reach the engine (teed the pipe and found it on line 1, and the module's regex
+# matches it), yet the value never lands here -- these lookups read
+# System.getenv, which the engine cannot populate for its own process.
+#
+# So the variable has to be set in the environment, and /usr/share/filebeat/logs
+# is exactly the Logs path Filebeat reports in that banner. It already exists in
+# the base image and is group-writable by uid 1000. Override it if Filebeat is
+# reconfigured with a different logging.files.path.
+#
+# Verified on log10x/filebeat-10x:1.1.25-native with the documented Receiver
+# config, unset vs set, nothing else differing:
+#
+#   filebeatLogsPath unset   2 launch failures, 0 events shipped
+#   filebeatLogsPath set     0 launch failures, events shipped to the destination
+ENV filebeatLogsPath=/usr/share/filebeat/logs
+
 USER filebeat

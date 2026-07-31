@@ -39,6 +39,11 @@ on:
         options:
           - Edge
           - Native
+      publish_latest:
+        required: false
+        default: false
+        type: boolean
+        description: 'Also move :latest to this build. Only one flavor may set it.'
 
   workflow_call:
     inputs:
@@ -54,6 +59,18 @@ on:
       tenx_dist:
         required: true
         type: string
+      publish_latest:
+        required: false
+        default: false
+        type: boolean
+        description: |
+          Move :latest to this build once it has been pulled back and run.
+
+          No forwarder repo has ever had a :latest tag; filebeat-10x has 207
+          tags and not one of them is latest, so the Receiver docs pin an exact
+          version. Only ONE of the four flavors this workflow builds (jit,
+          native, and the two debug variants) may set this, or they race for
+          the same tag. The orchestrator sets it on Native only.
 
 jobs:
   prepare:
@@ -180,6 +197,7 @@ jobs:
           images: ${{needs.prepare.outputs.docker_images}}
           tags: |
             type=raw,value=${{needs.prepare.outputs.version_tag}}-amd64
+            type=raw,value=latest-amd64,enable=${{ inputs.publish_latest }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -235,6 +253,7 @@ jobs:
           images: ${{needs.prepare.outputs.docker_images}}
           tags: |
             type=raw,value=${{needs.prepare.outputs.version_tag}}-aarch64
+            type=raw,value=latest-aarch64,enable=${{ inputs.publish_latest }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -262,6 +281,105 @@ jobs:
     uses: ./.github/workflows/update_multiarch_manifest.yaml
     with:
       version_tag: ${{needs.prepare.outputs.version_tag}}
+      docker_hub: ${{ inputs.docker_hub }}
+      docker_repo: ${{ needs.prepare.outputs.docker_repo }}
+      image_name: ${{ needs.prepare.outputs.image_name }}
+      dockerhub_repo: ${{ needs.prepare.outputs.dockerhub_repo }}
+    secrets: inherit
+
+  # LAUNCH the image before :latest points at it.
+  #
+  # This deliberately does NOT copy the `--version` check that gates edge-10x.
+  # That check is not strong enough here, and this is measured rather than
+  # supposed: log10x/filebeat-10x:1.1.25-native reports "10x engine v1.1.25"
+  # from --version while being unable to launch its pipeline at all. Two
+  # separate fatal defects hid behind a green --version, and both reached
+  # customers:
+  #
+  #   docker-images#11  Could not create directory /var/log/tenx
+  #   docker-images#12  Could not create directory .../${env:filebeatLogsPath}
+  #
+  # `--version` exits before the pipeline is constructed, which is exactly where
+  # both failures live. So this runs the real entrypoint and asserts the engine
+  # actually reached a constructed pipeline.
+  #
+  # ON THE LICENSE, WHICH IS THE SUBTLE PART
+  #
+  # The license baked into the image at build time is `limited`, and the Receiver
+  # publishes metrics, which a limited license refuses:
+  #
+  #   metricOutput(Log10xMetricRegistryFactory) requires a license
+  #
+  # That refusal aborts the launch BEFORE the appenders are constructed, so a
+  # gate running on the embedded license never reaches the defective code and
+  # reports green on a broken image. Verified: an earlier version of this gate
+  # passed on the known-broken image above. A gate that cannot fail on the
+  # artifact it exists to reject is worse than no gate, because it is believed.
+  #
+  # So the gate fetches a demo license, which is a public unauthenticated
+  # endpoint and needs no repository secret. Re-verified against both images,
+  # broken and fixed, before being committed.
+  smoke_launch:
+    name: "Launch-gate ${{needs.prepare.outputs.version_tag}}"
+    if: ${{ inputs.publish_latest }}
+    needs:
+      - prepare
+      - publish_x86
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Launch the pushed image and require a constructed pipeline
+        run: |
+          set -euo pipefail
+          IMAGE="${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{needs.prepare.outputs.version_tag}}-amd64"
+          echo "pulling $IMAGE"
+          docker pull "$IMAGE"
+
+          LIC=$(curl -sS -X POST https://api.log10x.com/api/v1/license/demo \
+                  -H 'Content-Type: application/json' -d '{}' \
+                | python3 -c 'import json,sys; print(json.load(sys.stdin)["license"])')
+          if [ -z "$LIC" ]; then
+            echo "::error::could not obtain a demo license; the gate cannot verify the launch"
+            exit 1
+          fi
+
+          # Runs the image's real entrypoint (filebeat piped into the engine).
+          # It is killed by timeout, so a non-zero exit here is expected.
+          set +e
+          OUT=$(timeout 90 docker run --rm -e TENX_LICENSE_KEY="$LIC" \
+                  "$IMAGE" -e -strict.perms=false 2>&1 | head -400)
+          set -e
+          echo "$OUT" | head -40
+
+          if echo "$OUT" | grep -q "could not launch pipeline"; then
+            echo "::error::the pushed image cannot launch its pipeline. $(echo "$OUT" | grep -o 'Could not create directory [^ ]*' | head -1)"
+            exit 1
+          fi
+
+          if ! echo "$OUT" | grep -q "pipeline units:"; then
+            echo "::error::the engine never constructed a pipeline. The binary is gated upstream, so this is the image assembly: entrypoint, TENX_HOME layout, permissions, or a module config that cannot resolve."
+            exit 1
+          fi
+
+          echo "launch OK: pipeline constructed, no launch failures"
+
+  publish_latest_manifest:
+    name: Publish multiarch manifest for latest
+    if: ${{ inputs.publish_latest }}
+    needs:
+      - prepare
+      - publish_x86
+      - publish_aarch64
+      - smoke_launch
+    uses: ./.github/workflows/update_multiarch_manifest.yaml
+    with:
+      version_tag: latest
       docker_hub: ${{ inputs.docker_hub }}
       docker_repo: ${{ needs.prepare.outputs.docker_repo }}
       image_name: ${{ needs.prepare.outputs.image_name }}

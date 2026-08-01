@@ -1,6 +1,6 @@
 # 🔟❎ Quarkus
 
-Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/engine/pipeline/) on demand with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud) capabilities.
+Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/engine/pipeline/) on demand with the [Log10x compiler](https://doc.log10x.com/engine/flavors/) capabilities.
 
 ## Quick start
 
@@ -15,7 +15,7 @@ The image ships with a built-in limited license. For the full engine, download y
 
 This image is built on [Quarkus](https://quarkus.io/), the Supersonic Subatomic Java Framework.
 
-Additionally, this image is bundled with all the tools that are required by Log10x cloud to work:
+Additionally, this image is bundled with all the tools that are required by the Log10x compiler to work:
 
 - binutils and python39, which are needed for the [compile](https://doc.log10x.com/compile/) pipeline
 - [Fluentbit](https://fluentbit.io/), allowing pipeline output to be emitted to your destination of choice.

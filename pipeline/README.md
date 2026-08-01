@@ -1,6 +1,6 @@
 # 🔟❎ Pipeline
 
-Docker image of a Red Hat (ubi8) container with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud)
+Docker image of a Red Hat (ubi8) container with the [Log10x compiler](https://doc.log10x.com/engine/flavors/)
 
 ## Quick start
 
@@ -13,7 +13,7 @@ The image ships with a built-in limited license. For the full engine, download y
 
 ## Under the hood
 
-This image is bundled with all the tools that are required by Log10x cloud to work:
+This image is bundled with all the tools that are required by the Log10x compiler to work:
 
 - binutils and python39, which are needed for the [compile](https://doc.log10x.com/compile/) pipeline
 - [Fluentbit](https://fluentbit.io/), allowing pipeline output to be emitted to your destination of choice.

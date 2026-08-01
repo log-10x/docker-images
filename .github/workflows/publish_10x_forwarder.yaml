@@ -37,8 +37,7 @@ on:
         type: choice
         description: Type of artifact
         options:
-          - Edge
-          - Native
+          - Runtime
       publish_latest:
         required: false
         default: false
@@ -68,9 +67,9 @@ on:
 
           No forwarder repo has ever had a :latest tag; filebeat-10x has 207
           tags and not one of them is latest, so the Receiver docs pin an exact
-          version. Only ONE of the four flavors this workflow builds (jit,
-          native, and the two debug variants) may set this, or they race for
-          the same tag. The orchestrator sets it on Native only.
+          version. Only ONE of the variants this workflow builds (the standard
+          and debug images) may set this, or they race for the same tag. The
+          orchestrator sets it on the standard Filebeat build only.
 
 jobs:
   prepare:
@@ -99,8 +98,16 @@ jobs:
               core.setFailed("Only Filebeat/Filebeat-Debug/Fluent-Bit/Fluent-Bit-Debug/Fluentd forwarders are supported")
             }
 
-            if ("${{ inputs.tenx_dist }}" != "Edge" && "${{ inputs.tenx_dist }}" != "Native") {
-              core.setFailed("Only Edge/Native dists are supported")
+            // "Native" is the old spelling of "Runtime" and still resolves, so
+            // an in-flight workflow_dispatch does not fail on the rename.
+            // "Edge" named the retired jpackage JIT build and is rejected
+            // outright -- install.sh no longer accepts --flavor edge, so a build
+            // that got this far would fail later and less clearly.
+            const dist = "${{ inputs.tenx_dist }}";
+            if (dist === "Edge") {
+              core.setFailed("The Edge dist is retired. It built the jpackage JIT image (tag suffix -jit); install.sh no longer accepts --flavor edge. Use Runtime.")
+            } else if (dist !== "Runtime" && dist !== "Native") {
+              core.setFailed("Only the Runtime dist is supported (Native is accepted as its old name)")
             }
 
       - name: Prepare variables
@@ -129,18 +136,14 @@ jobs:
           echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
           echo "dockerhub_repo=docker.io/${{ vars.DOCKERHUB_REPO_NAME }}" >> "$GITHUB_OUTPUT"
 
+          # The tag SUFFIX stays "-native". It is part of a published image
+          # name, not a flag: 222 filebeat-10x tags carry it, the Receiver docs
+          # pin exact tags, and charts/filebeat/values.yaml selects on it.
+          # Renaming the flavor does not rename images already pulled.
           if [ "${{ inputs.forwarder_type }}" != "Fluent-Bit-Debug" ] && [ "${{ inputs.forwarder_type }}" != "Filebeat-Debug" ]; then
-            if [ "${{ inputs.tenx_dist }}" == "Edge" ]; then
-              echo "version_tag=${{inputs.release_version}}-jit" >> "$GITHUB_OUTPUT"
-            elif [ "${{ inputs.tenx_dist }}" == "Native" ]; then
-              echo "version_tag=${{inputs.release_version}}-native" >> "$GITHUB_OUTPUT"
-            fi
+            echo "version_tag=${{inputs.release_version}}-native" >> "$GITHUB_OUTPUT"
           else
-            if [ "${{ inputs.tenx_dist }}" == "Edge" ]; then
-              echo "version_tag=${{inputs.release_version}}-jit-debug" >> "$GITHUB_OUTPUT"
-            elif [ "${{ inputs.tenx_dist }}" == "Native" ]; then
-              echo "version_tag=${{inputs.release_version}}-native-debug" >> "$GITHUB_OUTPUT"
-            fi
+            echo "version_tag=${{inputs.release_version}}-native-debug" >> "$GITHUB_OUTPUT"
           fi
 
           IMAGES=""
@@ -212,7 +215,7 @@ jobs:
           provenance: false
           build-args: |
             VERSION=${{inputs.release_version}}
-            FLAVOR=${{inputs.tenx_dist}}
+            FLAVOR=runtime
             LICENSE_JWT=${{ env.LICENSE_JWT }}
           tags: ${{ steps.docker-meta.outputs.tags }}
 
@@ -268,7 +271,7 @@ jobs:
           provenance: false
           build-args: |
             VERSION=${{inputs.release_version}}
-            FLAVOR=${{inputs.tenx_dist}}
+            FLAVOR=runtime
             LICENSE_JWT=${{ env.LICENSE_JWT }}
           tags: ${{ steps.docker-meta.outputs.tags }}
 

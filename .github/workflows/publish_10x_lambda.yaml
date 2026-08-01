@@ -236,3 +236,18 @@ jobs:
       image_name: ${{needs.prepare.outputs.image_name}}
       dockerhub_repo: ${{needs.prepare.outputs.dockerhub_repo}}
     secrets: inherit
+
+  publish_latest_manifest:
+    name: Publish multiarch manifest for latest
+    needs:
+      - prepare
+      - publish_x86
+      - publish_aarch64
+    uses: ./.github/workflows/update_multiarch_manifest.yaml
+    with:
+      version_tag: latest
+      docker_hub: ${{ inputs.docker_hub }}
+      docker_repo: ${{needs.prepare.outputs.docker_repo}}
+      image_name: ${{needs.prepare.outputs.image_name}}
+      dockerhub_repo: ${{needs.prepare.outputs.dockerhub_repo}}
+    secrets: inherit

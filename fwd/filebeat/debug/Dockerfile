@@ -80,11 +80,43 @@ RUN mkdir -p /etc/tenx/debug
 #
 RUN sed -i '0,/exec filebeat "$@"/s//exec filebeat "$@" 2\>\&1 | tee \/etc\/tenx\/debug\/raw_filebeat.log | $TENX_BIN run $TENX_RUN_ARGS/' /usr/local/bin/docker-entrypoint
 
-# Copy 10x from builder
+# Copy 10x from builder, forcing root ownership.
 #
-COPY --from=tenx-builder $TENX_SYMBOLS_PATH $TENX_SYMBOLS_PATH
-COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
-COPY --from=tenx-builder $TENX_HOME $TENX_HOME
+# --chown=0:0 is load-bearing. The release tarballs on
+# log-10x/pipeline-releases are packed by a GitHub Actions runner, so every
+# member carries uid/gid 1001 ("runner"):
+#
+#   $ tar --numeric-owner -tvzf tenx-modules-1.1.38.tar.gz | head -1
+#   -rw-r--r--  0 1001 1001  1074 LICENSE
+#
+# install.sh unpacks them with `tar -xzf` as root, and GNU tar restores the
+# archived owner when it runs as root, so the whole installed tree lands as
+# 1001:1001. A plain `COPY --from` preserves that into the final image.
+#
+# Filebeat then refuses to load its own config files, because libbeat's
+# strict-perms check requires every config file to be owned by root or by the
+# effective uid. Measured on this image built without --chown, run as uid 0,
+# which is what the chart uses (daemonset.securityContext.runAsUser: 0):
+#
+#   Exiting: Failed to start crawler: starting input failed: error while
+#   initializing input: failed in processor.javascript: config file
+#   (".../input/forwarder/filebeat/script/tenx-receive.js") must be owned by
+#   the user identifier (uid=0) or root
+#   exit 1
+#
+# The chart loads two files out of this tree: the script processor above and
+# `conf/tenxNix.yml` via filebeat.config.inputs, so both trip the check.
+#
+# uid 0 is the right owner rather than 1000/filebeat: libbeat accepts a
+# root-owned config for ANY effective uid, so this works whether the pod runs
+# as root or as the image's default filebeat user. The alternative fix,
+# passing -strict.perms=false in the chart, disables a security check to paper
+# over our own packaging, and would leave the engine binary owned by whatever
+# local account happens to hold uid 1001.
+#
+COPY --chown=0:0 --from=tenx-builder $TENX_SYMBOLS_PATH $TENX_SYMBOLS_PATH
+COPY --chown=0:0 --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
+COPY --chown=0:0 --from=tenx-builder $TENX_HOME $TENX_HOME
 
 # Switch back tothe filebeat user, same as original image
 #

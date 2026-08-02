@@ -5,6 +5,9 @@
 #
 FROM --platform=${BUILDPLATFORM:-linux/amd64} debian:bookworm-slim AS tenx-builder
 
+# Created here because the fluent-bit runtime stage has no coreutils (see below).
+RUN mkdir -p /var/log/tenx && chmod 777 /var/log/tenx
+
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG VERSION
@@ -104,5 +107,9 @@ COPY --from=tenx-builder $TENX_HOME $TENX_HOME
 # with the file appender only the startup banner reaches stdout, so `kubectl
 # logs` shows a healthy-looking pod while every WARN, ERROR and stack trace goes
 # to a file nobody reads. Set TENX_LOG_APPENDER=tenxFileAppender to opt back in.
-RUN mkdir -p /var/log/tenx && chmod 777 /var/log/tenx
+# fluent/fluent-bit has no coreutils, so `mkdir` does not exist in this stage:
+# `RUN mkdir -p /var/log/tenx` fails with `/bin/sh: 1: mkdir: not found`, which is
+# why no native fluent-bit image has ever built. Create it in the builder, which is
+# debian-based, and copy the directory in.
+COPY --from=tenx-builder --chmod=777 /var/log/tenx /var/log/tenx
 ENV TENX_LOG_APPENDER=tenxConsoleAppender

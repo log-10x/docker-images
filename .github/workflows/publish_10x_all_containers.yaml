@@ -124,9 +124,11 @@ jobs:
       docker_hub: ${{ inputs.docker_hub }}
     secrets: inherit
 
-  # The native flavor does NOT need Quarkus first: it stages tenx-home from the
-  # release's own config/modules/symbols artifacts rather than pulling it out of
-  # a quarkus-10x tag. Only `prepare`.
+  # The native Lambda image does NOT need Quarkus first: it stages tenx-home
+  # from the release's own config/modules/symbols artifacts rather than pulling
+  # it out of a quarkus-10x tag. Only `prepare`. ("native" here is the Lambda
+  # image packaging variant, jvm|native -- not an engine flavor. The engine
+  # flavors are compiler|runtime; see pipeline-releases/FLAVORS.md.)
   LambdaNative:
     if: ${{ inputs.publish_lambda }}
     needs:

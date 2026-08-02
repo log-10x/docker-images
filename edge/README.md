@@ -1,6 +1,6 @@
 # 🔟❎ Edge
 
-Docker image of a lightweight Debian (bookworm-slim) container with [Log10x Edge](https://doc.log10x.com/engine/flavors/#edge) as a GraalVM native binary.
+Docker image of a lightweight Debian (bookworm-slim) container with the [Log10x runtime](https://doc.log10x.com/engine/flavors/) as a GraalVM native binary.
 
 ## Quick start
 

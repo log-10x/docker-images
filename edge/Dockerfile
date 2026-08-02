@@ -11,9 +11,11 @@ ARG VERSION
 #
 RUN apt-get update && apt-get install -y curl
 
-# Install 10x native edge binary
+# Install the 10x runtime: the native binary (reporter, receiver, retriever,
+# MCP, CLI). 'runtime' is the flavor flag; the install prefix it produces is
+# /opt/tenx-edge, named for the package id -- see pipeline-releases/FLAVORS.md.
 #
-RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor native --no-env-setup
+RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor runtime --no-env-setup
 
 FROM --platform=${BUILDPLATFORM:-linux/amd64} debian:bookworm-slim
 

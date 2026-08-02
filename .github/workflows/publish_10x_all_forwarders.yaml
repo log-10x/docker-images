@@ -1,5 +1,10 @@
 name: Publish All 10x forwarders
 
+# NOTE: the JIT builds are GONE. They installed the jpackage 'edge' flavor,
+# which is retired (see pipeline-releases/FLAVORS.md), and they produced the
+# -jit / -jit-debug tag suffixes. Tags already published keep working; no new
+# ones are cut. Every forwarder now builds the runtime flavor only.
+#
 # NOTE: the Fluent Bit and Fluentd toggles below are RETIRED (image-swap model).
 # Fluentd/Fluent Bit now run 10x as a separate log10x/edge-10x SIDECAR container on
 # the upstream fluent charts, not a baked image. Kept for legacy rebuilds only --
@@ -79,34 +84,20 @@ jobs:
             echo "release_version=$LATEST" >> "$GITHUB_OUTPUT"
           fi
 
-  filebeat-jit:
-    if: ${{ inputs.publish_filebeat }}
-    name: Filebeat JIT
-    uses: ./.github/workflows/publish_10x_forwarder.yaml
-    needs:
-      - prepare
-    with:
-      release_version: ${{ needs.prepare.outputs.release_version }}
-      docker_hub: ${{ inputs.docker_hub }}
-      forwarder_type: Filebeat
-      tenx_dist: Edge
-    secrets: inherit
-
   # The ONLY job that may move :latest.
   #
-  # Four flavors are built per forwarder (jit, native, and the two debug
-  # variants) and they all finish around the same time, so more than one setting
-  # publish_latest would race for the same tag and the winner would be whichever
-  # runner happened to finish last.
+  # Two images are built per forwarder (standard and debug) and they finish
+  # around the same time, so more than one setting publish_latest would race for
+  # the same tag and the winner would be whichever runner happened to finish
+  # last.
   #
-  # Native rather than jit because that is the flavor GA ships and the one the
-  # Receiver docs are moving to. Filebeat rather than the others because the
-  # Fluent Bit and Fluentd image builds are retired (see the note at the top of
-  # publish_10x_forwarder.yaml); those forwarders run edge-10x as a sidecar and
-  # neither image is referenced anywhere in the docs.
-  filebeat-native:
+  # Filebeat rather than the others because the Fluent Bit and Fluentd image
+  # builds are retired (see the note at the top of publish_10x_forwarder.yaml);
+  # those forwarders run edge-10x as a sidecar and neither image is referenced
+  # anywhere in the docs.
+  filebeat:
     if: ${{ inputs.publish_filebeat }}
-    name: Filebeat Native
+    name: Filebeat
     uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
@@ -114,13 +105,13 @@ jobs:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Filebeat
-      tenx_dist: Native
+      tenx_dist: Runtime
       publish_latest: true
     secrets: inherit
 
-  filebeat-debug-jit:
+  filebeat-debug:
     if: ${{ inputs.publish_filebeat_debug }}
-    name: Filebeat Debug JIT
+    name: Filebeat Debug
     uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
@@ -128,25 +119,12 @@ jobs:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Filebeat-Debug
-      tenx_dist: Edge
+      tenx_dist: Runtime
     secrets: inherit
 
-  filebeat-debug-native:
-    if: ${{ inputs.publish_filebeat_debug }}
-    name: Filebeat Debug Native
-    uses: ./.github/workflows/publish_10x_forwarder.yaml
-    needs:
-      - prepare
-    with:
-      release_version: ${{ needs.prepare.outputs.release_version }}
-      docker_hub: ${{ inputs.docker_hub }}
-      forwarder_type: Filebeat-Debug
-      tenx_dist: Native
-    secrets: inherit
-
-  fluent-bit-jit:
+  fluent-bit:
     if: ${{ inputs.publish_fluent_bit }}
-    name: Fluent-Bit JIT
+    name: Fluent-Bit
     uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
@@ -154,25 +132,12 @@ jobs:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluent-Bit
-      tenx_dist: Edge
+      tenx_dist: Runtime
     secrets: inherit
 
-  fluent-bit-native:
-    if: ${{ inputs.publish_fluent_bit }}
-    name: Fluent-Bit Native
-    uses: ./.github/workflows/publish_10x_forwarder.yaml
-    needs:
-      - prepare
-    with:
-      release_version: ${{ needs.prepare.outputs.release_version }}
-      docker_hub: ${{ inputs.docker_hub }}
-      forwarder_type: Fluent-Bit
-      tenx_dist: Native
-    secrets: inherit
-
-  fluent-bit-debug-jit:
+  fluent-bit-debug:
     if: ${{ inputs.publish_fluent_bit_debug }}
-    name: Fluent-Bit Debug JIT
+    name: Fluent-Bit Debug
     uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
@@ -180,25 +145,12 @@ jobs:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluent-Bit-Debug
-      tenx_dist: Edge
+      tenx_dist: Runtime
     secrets: inherit
 
-  fluent-bit-debug-native:
-    if: ${{ inputs.publish_fluent_bit_debug }}
-    name: Fluent-Bit Debug Native
-    uses: ./.github/workflows/publish_10x_forwarder.yaml
-    needs:
-      - prepare
-    with:
-      release_version: ${{ needs.prepare.outputs.release_version }}
-      docker_hub: ${{ inputs.docker_hub }}
-      forwarder_type: Fluent-Bit-Debug
-      tenx_dist: Native
-    secrets: inherit
-
-  fluentd-jit:
+  fluentd:
     if: ${{ inputs.publish_fluentd }}
-    name: Fluentd JIT
+    name: Fluentd
     uses: ./.github/workflows/publish_10x_forwarder.yaml
     needs:
       - prepare
@@ -206,18 +158,5 @@ jobs:
       release_version: ${{ needs.prepare.outputs.release_version }}
       docker_hub: ${{ inputs.docker_hub }}
       forwarder_type: Fluentd
-      tenx_dist: Edge
-    secrets: inherit
-
-  fluentd-native:
-    if: ${{ inputs.publish_fluentd }}
-    name: Fluentd Native
-    uses: ./.github/workflows/publish_10x_forwarder.yaml
-    needs:
-      - prepare
-    with:
-      release_version: ${{ needs.prepare.outputs.release_version }}
-      docker_hub: ${{ inputs.docker_hub }}
-      forwarder_type: Fluentd
-      tenx_dist: Native
+      tenx_dist: Runtime
     secrets: inherit

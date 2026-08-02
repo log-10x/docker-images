@@ -8,12 +8,17 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} debian:bookworm-slim AS tenx-build
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG VERSION
-ARG FLAVOR="edge"
+ARG FLAVOR="runtime"
 
-# Validate that FLAVOR is either edge/native, cloud isn't supported for forwarder builds
+# Only the runtime flavor is supported for forwarder builds. The compiler
+# flavor is a .deb/.rpm with a bundled JRE and installs to /opt/tenx-cloud,
+# which is not the prefix this image bakes into TENX_HOME below.
+#
+# 'native' is the old spelling of 'runtime' and still resolves; 'edge' named
+# the retired jpackage JIT build and is rejected by install.sh itself.
 RUN VALIDATE_FLAVOR=$(echo "${FLAVOR}" | tr '[:upper:]' '[:lower:]') && \
-    if [ "$VALIDATE_FLAVOR" != "edge" ] && [ "$VALIDATE_FLAVOR" != "native" ]; then \
-    echo "Invalid flavor: ${FLAVOR}. Allowed values are: Edge, Native" >&2; \
+    if [ "$VALIDATE_FLAVOR" != "runtime" ] && [ "$VALIDATE_FLAVOR" != "native" ]; then \
+    echo "Invalid flavor: ${FLAVOR}. Allowed values are: Runtime" >&2; \
     exit 1; \
 fi
 
@@ -45,6 +50,9 @@ ARG LICENSE_JWT
 
 # Manually setting up 10x environment variables
 #
+# /opt/tenx-edge is the install prefix for the RUNTIME flavor. The prefix is
+# named for the package id, not the flavor, and it does not change with the
+# rename -- see pipeline-releases/FLAVORS.md.
 ENV TENX_HOME=/opt/tenx-edge
 ENV TENX_BIN=/opt/tenx-edge/bin/tenx-edge
 ENV TENX_MODULES=/opt/tenx-edge/lib/app/modules

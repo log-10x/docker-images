@@ -6,7 +6,8 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} registry.access.redhat.com/ubi8/ub
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG VERSION
-ARG FLAVOR="cloud"
+# The flavor FLAG passed to install.sh.
+ARG FLAVOR="compiler"
 
 # Install curl, needed for 10x install script
 #
@@ -30,7 +31,11 @@ LABEL com.log10x.license.url="https://log10x.com/pricing"
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
-ARG FLAVOR="cloud"
+# PACKAGE_ID is the install prefix and binary name that the compiler flavor's
+# .deb/.rpm creates. It is NOT the flavor flag above, and it does not change
+# with the flavor rename -- see pipeline-releases/FLAVORS.md. Change these two
+# only together.
+ARG PACKAGE_ID="cloud"
 ARG LICENSE_JWT
 
 # Install binutils (strings) + file (executable scanner), needed for 10x 'compile'
@@ -62,9 +67,9 @@ RUN mkdir -p /var/log/tenx && chmod 777 /var/log/tenx
 
 # Manually setting up 10x environment variables
 #
-ENV TENX_HOME=/opt/tenx-${FLAVOR}
-ENV TENX_BIN=/opt/tenx-${FLAVOR}/bin/tenx-${FLAVOR}
-ENV TENX_MODULES=/opt/tenx-${FLAVOR}/lib/app/modules
+ENV TENX_HOME=/opt/tenx-${PACKAGE_ID}
+ENV TENX_BIN=/opt/tenx-${PACKAGE_ID}/bin/tenx-${PACKAGE_ID}
+ENV TENX_MODULES=/opt/tenx-${PACKAGE_ID}/lib/app/modules
 ENV TENX_CONFIG=/etc/tenx/config
 ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
 ENV TENX_LICENSE_KEY=${LICENSE_JWT}

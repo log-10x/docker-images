@@ -7,7 +7,7 @@ an engine for dynamically optimizing execution with the goal improving performan
 
 ## Edge
 
-Docker image of a lightweight Debian (bookworm-slim) container with [Log10x Edge](https://doc.log10x.com/engine/flavors/#edge) as a GraalVM native binary.
+Docker image of a lightweight Debian (bookworm-slim) container with the [Log10x runtime](https://doc.log10x.com/engine/flavors/) as a GraalVM native binary.
 
 Designed for [sidecar deployments](https://doc.log10x.com/engine/launcher/sidecar/) alongside log forwarders (Fluentd, Fluent Bit, OTel Collector), providing real-time log/trace optimization at the edge with minimal resource footprint.
 
@@ -15,13 +15,13 @@ Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentat
 
 ## Pipeline
 
-Docker image of a Red Hat (ubi8) container with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud)
+Docker image of a Red Hat (ubi8) container with the [Log10x compiler](https://doc.log10x.com/engine/flavors/)
 
 Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
 
 ## Quarkus
 
-Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/engine/pipeline/) on demand with [Log10x Cloud](https://doc.log10x.com/engine/flavors/#cloud) capabilities.
+Docker image of a [Quarkus](https://quarkus.io/) server capable of invoking [Log10x pipelines](https://doc.log10x.com/engine/pipeline/) on demand with the [Log10x compiler](https://doc.log10x.com/engine/flavors/) capabilities.
 
 Visit our [Docker deployment](https://doc.log10x.com/install/docker/) documentation for more info about using this image.
 

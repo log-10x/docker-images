@@ -66,11 +66,20 @@ ENV TENX_LICENSE_KEY=${LICENSE_JWT}
 #
 ENV TENX_CONFIG=/etc/tenx/config
 
-# Copy 10x from builder
+# Copy 10x from builder, forcing root ownership.
 #
-COPY --from=tenx-builder $TENX_SYMBOLS_PATH $TENX_SYMBOLS_PATH
-COPY --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
-COPY --from=tenx-builder $TENX_HOME $TENX_HOME
+# --chown=0:0 is load-bearing. The release tarballs on
+# log-10x/pipeline-releases are packed by a GitHub Actions runner, so every
+# member carries uid/gid 1001 ("runner"), install.sh unpacks them with
+# `tar -xzf` as root, and GNU tar restores the archived owner when it runs as
+# root. A plain `COPY --from` then preserves 1001:1001 into the final image,
+# which means the engine binary and its config are owned by whatever local
+# account happens to hold uid 1001. Filebeat's strict-perms check rejects that
+# outright; see fwd/filebeat/Dockerfile for the measured failure.
+#
+COPY --chown=0:0 --from=tenx-builder $TENX_SYMBOLS_PATH $TENX_SYMBOLS_PATH
+COPY --chown=0:0 --from=tenx-builder $TENX_CONFIG $TENX_CONFIG
+COPY --chown=0:0 --from=tenx-builder $TENX_HOME $TENX_HOME
 
 # Create the engine's log directory and default its logs to stdout.
 #

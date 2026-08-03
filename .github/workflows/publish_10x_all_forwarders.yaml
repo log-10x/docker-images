@@ -122,6 +122,11 @@ jobs:
       tenx_dist: Runtime
     secrets: inherit
 
+  # No publish_latest on Fluent Bit or Fluentd, deliberately, not by oversight.
+  # Both images are retired image-swap builds; the current model runs edge-10x as
+  # a sidecar. A mutable convenience tag on a retired build path only advertises
+  # a path we have moved off. Reasoning and the conditions for reversing it:
+  # fwd/fluentd/DEPRECATED.md.
   fluent-bit:
     if: ${{ inputs.publish_fluent_bit }}
     name: Fluent-Bit
@@ -148,6 +153,7 @@ jobs:
       tenx_dist: Runtime
     secrets: inherit
 
+  # See the note above fluent-bit: no publish_latest here either, deliberately.
   fluentd:
     if: ${{ inputs.publish_fluentd }}
     name: Fluentd

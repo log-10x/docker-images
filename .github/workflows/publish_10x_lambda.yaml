@@ -157,6 +157,8 @@ jobs:
           build-args: |
             ENGINE_VERSION=${{ inputs.release_version }}
             LICENSE_JWT=${{ env.LICENSE_JWT }}
+          secrets: |
+            gh_token=${{ secrets.GITHUB_TOKEN }}
 
   publish_aarch64:
     name: "Build aarch64 Lambda ${{needs.prepare.outputs.version_tag}}"
@@ -221,6 +223,8 @@ jobs:
           build-args: |
             ENGINE_VERSION=${{ inputs.release_version }}
             LICENSE_JWT=${{ env.LICENSE_JWT }}
+          secrets: |
+            gh_token=${{ secrets.GITHUB_TOKEN }}
 
   publish_version_manifest:
     name: Publish multiarch manifest for ${{needs.prepare.outputs.version_tag}}

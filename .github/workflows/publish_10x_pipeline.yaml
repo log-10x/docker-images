@@ -127,6 +127,8 @@ jobs:
           build-args: |
             VERSION=${{inputs.release_version}}
             LICENSE_JWT=${{ env.LICENSE_JWT }}
+          secrets: |
+            gh_token=${{ secrets.GITHUB_TOKEN }}
           tags: ${{ steps.docker-meta.outputs.tags }}
 
   publish_aarch64:
@@ -182,6 +184,8 @@ jobs:
           build-args: |
             VERSION=${{inputs.release_version}}
             LICENSE_JWT=${{ env.LICENSE_JWT }}
+          secrets: |
+            gh_token=${{ secrets.GITHUB_TOKEN }}
           tags: ${{ steps.docker-meta.outputs.tags }}
 
   publish_version_manifest:

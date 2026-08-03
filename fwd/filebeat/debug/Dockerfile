@@ -28,7 +28,15 @@ RUN apt-get update && apt-get install -y curl
 
 # Install 10x
 #
-RUN curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup
+# The token is a BuildKit secret, not a build-arg: these images are public and a
+# build-arg would be visible in `docker history` forever. It raises install.sh's
+# GitHub API limit, which is 60 requests/hour PER IP unauthenticated. The publish
+# fans out ~10 parallel builds on shared runner IPs, exhausts the quota, and the
+# builds fail with HTTP 403. Optional: absent, the install still works, it is just
+# rate-limited.
+RUN --mount=type=secret,id=gh_token \
+    TENX_GITHUB_TOKEN="$(cat /run/secrets/gh_token 2>/dev/null || true)" \
+    sh -c 'curl https://raw.githubusercontent.com/log-10x/pipeline-releases/main/install.sh | TENX_GITHUB_TOKEN="$TENX_GITHUB_TOKEN" bash -s -- --version ${VERSION} --flavor ${FLAVOR} --no-env-setup'
 
 
 # Filebeat image

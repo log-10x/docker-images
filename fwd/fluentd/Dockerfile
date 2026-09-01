@@ -56,7 +56,6 @@ LABEL com.log10x.license.url="https://log10x.com/pricing"
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
-ARG LICENSE_JWT
 
 # Manually setting up 10x environment variables
 #

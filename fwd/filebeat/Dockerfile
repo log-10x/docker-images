@@ -53,7 +53,6 @@ LABEL org.opencontainers.image.source="https://github.com/log-10x/docker-images"
 LABEL com.log10x.license.required="true"
 LABEL com.log10x.license.url="https://log10x.com/pricing"
 
-ARG LICENSE_JWT
 
 # Manually setting up 10x environment variables
 #

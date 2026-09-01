@@ -55,7 +55,6 @@ ENV TENX_HOME=/var/task/tenx-home \
     TENX_MODULES=/var/task/tenx-home/modules \
     TENX_SYMBOLS_PATH=/var/task/tenx-home/config/data/shared/symbols \
     TENX_LOG_APPENDER=tenxConsoleAppender \
-    TENX_LOG_PATH=/tmp/ \
-    TENX_LICENSE_KEY=${LICENSE_JWT}
+    TENX_LOG_PATH=/tmp/
 
 CMD [ "com.log10x.ext.lambda.RetrieverHandler::handleRequest" ]

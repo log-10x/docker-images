@@ -45,7 +45,6 @@ ENV TENX_BIN=/opt/tenx-edge/bin/tenx-edge
 ENV TENX_MODULES=/opt/tenx-edge/lib/app/modules
 ENV TENX_CONFIG=/etc/tenx/config
 ENV TENX_SYMBOLS_PATH=/etc/tenx/symbols
-ENV TENX_LICENSE_KEY=${LICENSE_JWT}
 
 # Set 10x logger to console.
 #

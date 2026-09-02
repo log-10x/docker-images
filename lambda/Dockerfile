@@ -26,7 +26,6 @@
 
 ARG ENGINE_VERSION
 ARG ENGINE_IMAGE=log10x/quarkus-10x:${ENGINE_VERSION}
-ARG LICENSE_JWT
 
 # Stage 1: pull tenx-home (config / modules / symbols) from the matching
 # quarkus image so the Lambda image always tracks the engine release —

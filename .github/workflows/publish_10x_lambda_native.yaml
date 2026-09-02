@@ -104,8 +104,6 @@ jobs:
         with:
           path: main
 
-      - name: Load embedded limited license JWT
-        run: echo "LICENSE_JWT=$(cat ./main/license.jwt)" >> "$GITHUB_ENV"
 
       # gh CLI requires a token, but built-in GITHUB_TOKEN works for public repos
       - name: Prepare release artifacts
@@ -185,6 +183,5 @@ jobs:
           sbom: false
           tags: ${{ steps.docker-meta.outputs.tags }}
           build-args: |
-            LICENSE_JWT=${{ env.LICENSE_JWT }}
           secrets: |
             gh_token=${{ secrets.GITHUB_TOKEN }}

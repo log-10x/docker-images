@@ -94,7 +94,6 @@ LABEL com.log10x.license.url="https://log10x.com/pricing"
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG DOCKER_IMAGE_TAG=unknown
-ARG LICENSE_JWT
 
 ENV LANGUAGE='en_US:en'
 

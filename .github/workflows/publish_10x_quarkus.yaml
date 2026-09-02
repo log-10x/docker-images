@@ -106,8 +106,6 @@ jobs:
         with:
           path: main
 
-      - name: Load embedded limited license JWT
-        run: echo "LICENSE_JWT=$(cat ./main/license.jwt)" >> "$GITHUB_ENV"
 
       # gh CLI requires a token, but built-in GITHUB_TOKEN works for public repos
       - name: Prepare release artifacts
@@ -164,7 +162,6 @@ jobs:
           tags: ${{ steps.docker-meta.outputs.tags }}
           build-args: |
             DOCKER_IMAGE_TAG=${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{needs.prepare.outputs.version_tag}}-amd64
-            LICENSE_JWT=${{ env.LICENSE_JWT }}
           secrets: |
             gh_token=${{ secrets.GITHUB_TOKEN }}
 
@@ -180,8 +177,6 @@ jobs:
         with:
           path: main
 
-      - name: Load embedded limited license JWT
-        run: echo "LICENSE_JWT=$(cat ./main/license.jwt)" >> "$GITHUB_ENV"
 
       # gh CLI requires a token, but built-in GITHUB_TOKEN works for public repos
       - name: Prepare release artifacts
@@ -238,7 +233,6 @@ jobs:
           tags: ${{ steps.docker-meta.outputs.tags }}
           build-args: |
             DOCKER_IMAGE_TAG=${{needs.prepare.outputs.docker_repo}}/${{needs.prepare.outputs.image_name}}:${{needs.prepare.outputs.version_tag}}-aarch64
-            LICENSE_JWT=${{ env.LICENSE_JWT }}
           secrets: |
             gh_token=${{ secrets.GITHUB_TOKEN }}
 

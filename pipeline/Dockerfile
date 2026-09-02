@@ -44,7 +44,6 @@ ARG BUILDPLATFORM
 # with the flavor rename -- see pipeline-releases/FLAVORS.md. Change these two
 # only together.
 ARG PACKAGE_ID="cloud"
-ARG LICENSE_JWT
 
 # Install binutils (strings) + file (executable scanner), needed for 10x 'compile'
 # Install shadow-utils, needed for useradd

@@ -86,8 +86,6 @@ jobs:
         with:
           path: main
 
-      - name: Load embedded limited license JWT
-        run: echo "LICENSE_JWT=$(cat ./main/license.jwt)" >> "$GITHUB_ENV"
 
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
@@ -126,7 +124,6 @@ jobs:
           provenance: false
           build-args: |
             VERSION=${{inputs.release_version}}
-            LICENSE_JWT=${{ env.LICENSE_JWT }}
           secrets: |
             gh_token=${{ secrets.GITHUB_TOKEN }}
           tags: ${{ steps.docker-meta.outputs.tags }}
@@ -143,8 +140,6 @@ jobs:
         with:
           path: main
 
-      - name: Load embedded limited license JWT
-        run: echo "LICENSE_JWT=$(cat ./main/license.jwt)" >> "$GITHUB_ENV"
 
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
@@ -183,7 +178,6 @@ jobs:
           provenance: false
           build-args: |
             VERSION=${{inputs.release_version}}
-            LICENSE_JWT=${{ env.LICENSE_JWT }}
           secrets: |
             gh_token=${{ secrets.GITHUB_TOKEN }}
           tags: ${{ steps.docker-meta.outputs.tags }}

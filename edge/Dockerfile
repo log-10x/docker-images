@@ -31,7 +31,6 @@ LABEL com.log10x.license.url="https://log10x.com/pricing"
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
-ARG LICENSE_JWT
 
 # Make sure path for log file exists and is accessible to all users.
 # This allows changing TENX_LOG_APPENDER to tenxFileAppender if desired

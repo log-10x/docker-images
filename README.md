@@ -41,7 +41,10 @@ these images require a license to use.**
 | Build scripts | Running Log10x containers |
 | Container configuration | Log10x engine features |
 
-Every image ships with a built-in **limited** license so it runs out of the box. To unlock the full engine, pass your own `license.jwt` at run time:
+Images carry no license. Started without one, the engine runs the built-in
+evaluation license: the full product, 30 days from process start, 10 nodes,
+air-gapped, with no outbound call. Pass your own token to license a
+deployment:
 
 ```console
 -e TENX_LICENSE_KEY="$(cat license.jwt)"

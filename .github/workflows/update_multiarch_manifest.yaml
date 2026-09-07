@@ -23,6 +23,18 @@ jobs:
   publish_manifest:
     name: Publish proper manifest
     runs-on: ubuntu-latest
+
+    # id-token: write is what makes keyless signing possible. Cosign exchanges
+    # this workflow's OIDC token for a short-lived Fulcio certificate, so the
+    # signature is bound to the workflow identity that produced the image and
+    # there is no private key to store, rotate, or lose. packages: write is
+    # needed because cosign pushes the signature to the registry as its own tag
+    # alongside the image.
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+
     steps:
       - name: Login to GHCR
         if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
@@ -39,6 +51,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.4.1'
+
       - name: Create GHCR manifest for ${{inputs.version_tag}}
         if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
         run: |
@@ -52,6 +69,27 @@ jobs:
 
           docker manifest push ${{inputs.docker_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}
 
+      # Sign the multi-arch index by DIGEST, not by tag. A tag is mutable and can
+      # be repointed after signing; the digest is the content. Signing the index
+      # covers both per-arch images beneath it, so one signature per image per
+      # registry rather than one per architecture.
+      - name: Sign GHCR image
+        if: ${{ inputs.docker_hub == 'GHCR' || inputs.docker_hub == 'All' }}
+        run: |
+          IMAGE="${{inputs.docker_repo}}/${{inputs.image_name}}"
+          # The FIRST "Digest:" line of imagetools output is the index digest.
+          # Not `docker manifest inspect -v`: on a multi-arch tag that returns an
+          # array of per-ARCHITECTURE manifests, so taking .[0] signs one arch and
+          # silently leaves the index and the other arch unsigned.
+          DIGEST=$(docker buildx imagetools inspect "$IMAGE:${{inputs.version_tag}}" \
+            | awk '/^Digest:/{print $2; exit}')
+          if [ -z "$DIGEST" ] || [ "$DIGEST" = "null" ]; then
+            echo "::error::could not resolve a digest for $IMAGE:${{inputs.version_tag}}; refusing to sign a tag"
+            exit 1
+          fi
+          echo "signing $IMAGE@$DIGEST"
+          cosign sign --yes "$IMAGE@$DIGEST"
+
       - name: Create Docker Hub manifest for ${{inputs.version_tag}}
         if: ${{ inputs.docker_hub == 'DockerHub' || inputs.docker_hub == 'All' }}
         run: |
@@ -64,3 +102,20 @@ jobs:
           docker manifest inspect ${{inputs.dockerhub_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}
 
           docker manifest push ${{inputs.dockerhub_repo}}/${{inputs.image_name}}:${{inputs.version_tag}}
+
+      - name: Sign Docker Hub image
+        if: ${{ inputs.docker_hub == 'DockerHub' || inputs.docker_hub == 'All' }}
+        run: |
+          IMAGE="${{inputs.dockerhub_repo}}/${{inputs.image_name}}"
+          # The FIRST "Digest:" line of imagetools output is the index digest.
+          # Not `docker manifest inspect -v`: on a multi-arch tag that returns an
+          # array of per-ARCHITECTURE manifests, so taking .[0] signs one arch and
+          # silently leaves the index and the other arch unsigned.
+          DIGEST=$(docker buildx imagetools inspect "$IMAGE:${{inputs.version_tag}}" \
+            | awk '/^Digest:/{print $2; exit}')
+          if [ -z "$DIGEST" ] || [ "$DIGEST" = "null" ]; then
+            echo "::error::could not resolve a digest for $IMAGE:${{inputs.version_tag}}; refusing to sign a tag"
+            exit 1
+          fi
+          echo "signing $IMAGE@$DIGEST"
+          cosign sign --yes "$IMAGE@$DIGEST"

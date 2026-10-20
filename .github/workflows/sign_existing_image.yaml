@@ -39,7 +39,8 @@ jobs:
       SOURCE_RUN: "23404327231"
       CRANE_VERSION: v0.22.1
       CRANE_SHA256: 0ab7a1d6932a213aed964ce97666c3077fe691c8606413674a8b3e0b9ec4cda0
-      IDENTITY_REGEXP: '^https://github\.com/log-10x/docker-images/\.github/workflows/'
+      # A docker-images workflow running on main, nothing else.
+      IDENTITY_REGEXP: '^https://github\.com/log-10x/docker-images/\.github/workflows/[^@]+@refs/heads/main$'
       OIDC_ISSUER: https://token.actions.githubusercontent.com
 
     steps:
@@ -57,7 +58,9 @@ jobs:
           sudo install -m 0755 crane /usr/local/bin/crane
 
       - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | crane auth login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
 
       - name: Check the tag still points at the pinned digest
         run: |

@@ -40,7 +40,8 @@ env:
   TRIVY_VERSION: 0.75.0
   TRIVY_SHA256: c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f
 
-  IDENTITY_REGEXP: '^https://github\.com/log-10x/docker-images/\.github/workflows/'
+  # A docker-images workflow running on main, nothing else.
+  IDENTITY_REGEXP: '^https://github\.com/log-10x/docker-images/\.github/workflows/[^@]+@refs/heads/main$'
   OIDC_ISSUER: https://token.actions.githubusercontent.com
   # A signer that must NOT verify. If it does, the check proves nothing.
   CONTROL_IDENTITY_REGEXP: '^https://github\.com/log-10x/engine/'
@@ -95,6 +96,10 @@ jobs:
           sudo install -m 0755 trivy /usr/local/bin/trivy
 
       - name: Scan
+        env:
+          # The weekly run fails on any fixable HIGH or CRITICAL (the 30-day
+          # remediation commitment); before a publish, a fixable CRITICAL blocks.
+          GATE_SEVERITY: ${{ github.event_name == 'schedule' && 'HIGH,CRITICAL' || 'CRITICAL' }}
         run: |
           set -euo pipefail
           status=0
@@ -107,8 +112,8 @@ jobs:
             echo "#### ${ref}" >> "$GITHUB_STEP_SUMMARY"
             trivy image --quiet --severity HIGH,CRITICAL --format table "$ref" | tee -a scan.txt
             { echo '```'; trivy image --quiet --severity HIGH,CRITICAL --format table "$ref"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            if ! trivy image --quiet --severity CRITICAL --ignore-unfixed --exit-code 1 "$ref" > /dev/null; then
-              echo "::error::${ref} has a fixable critical vulnerability"
+            if ! trivy image --quiet --severity "$GATE_SEVERITY" --ignore-unfixed --exit-code 1 "$ref" > /dev/null; then
+              echo "::error::${ref} has a fixable ${GATE_SEVERITY} vulnerability"
               status=1
             fi
           done
@@ -135,6 +140,9 @@ jobs:
           for v in CHART_COMMIT ECR_PREFIX; do
             case "${!v}" in REPLACE-*) echo "::error::${v} is still a placeholder"; exit 1;; esac
           done
+          if ! [[ "$CHART_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::CHART_COMMIT must be a full 40-character commit SHA, not ${CHART_COMMIT}"; exit 1
+          fi
           if [ -z "${{ vars.AWS_MARKETPLACE_ECR_ROLE_ARN }}" ]; then
             echo "::error::repository variable AWS_MARKETPLACE_ECR_ROLE_ARN is not set"; exit 1
           fi
@@ -171,9 +179,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Log in to GHCR and Marketplace ECR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+          echo "$GHCR_TOKEN" | crane auth login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
           pw=$(aws ecr get-login-password --region "$AWS_REGION")
           echo "$pw" | crane auth login "$ECR_REGISTRY" -u AWS --password-stdin
           echo "$pw" | helm registry login "$ECR_REGISTRY" -u AWS --password-stdin
@@ -250,14 +260,24 @@ jobs:
           " values.yaml
           helm lint .
           # Marketplace's own checks: render with no hooks, and every image
-          # must be a Marketplace ECR reference by digest. Rendered twice so
-          # the git init container's image is checked too.
+          # line, list form included, must be a Marketplace ECR reference by
+          # digest. Rendered twice so the git init container is checked too.
+          render() { helm template reporter-10x . --kube-version "$KUBE_VERSION" --namespace log10x --include-crds --no-hooks "$@"; }
+          gate() {
+            grep -E '^\s*(-\s*)?image:' "$1" \
+              | grep -v -E "^\s*(-\s*)?image: \"?${r}/[a-z0-9-]+@sha256:[0-9a-f]{64}\"?$" || true
+          }
           for extra in "" "--set config.git.enabled=true"; do
-            helm template reporter-10x . --kube-version "$KUBE_VERSION" --namespace log10x \
-              --include-crds --no-hooks $extra > rendered.yaml
-            bad=$(grep -E '^\s*image:' rendered.yaml | grep -v -E "image: \"?${r}/[a-z0-9-]+@sha256:[0-9a-f]{64}\"?$" || true)
+            render $extra > rendered.yaml
+            bad=$(gate rendered.yaml)
             if [ -n "$bad" ]; then echo "::error::images that are not Marketplace ECR digests:"; echo "$bad"; exit 1; fi
           done
+          # The gate must be able to fail: with one digest blanked, the edge
+          # image renders by tag and has to be rejected.
+          render --set tenx.image.digest= > control.yaml
+          if [ -z "$(gate control.yaml)" ]; then
+            echo "::error::the image gate accepted a render with a blank digest; it proves nothing"; exit 1
+          fi
           helm package . --destination "$GITHUB_WORKSPACE/chart-out"
 
       - name: Push and sign the chart

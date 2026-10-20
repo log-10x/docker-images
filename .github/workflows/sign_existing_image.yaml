@@ -1,0 +1,89 @@
+name: Sign an existing image digest
+
+# Signs an image that was published before update_multiarch_manifest.yaml
+# started signing (docker-images #24, 2026-09-07). It signs the digest that is
+# already published: no rebuild, no re-push, and it does not call
+# update_multiarch_manifest.yaml, which recreates the manifest.
+#
+# The image, tag and digest are pinned here and reviewed in the pull request.
+# The job refuses to sign if the tag no longer resolves to the pinned digest.
+# An existing tag is never re-pushed; new content gets a new version.
+#
+# SOC 2 ruling 2026-10-20 (a): chiaro-soc2/governance/scope-rulings-ai-discovery-2026-10-15.md
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    name: Sign pinned digest
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    # id-token: write lets cosign sign keylessly as this workflow's identity.
+    # packages: write lets it push the signature next to the image on GHCR.
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+
+    env:
+      IMAGE: ghcr.io/log-10x/git-config-fetcher
+      TAG: "1.0.0"
+      DIGEST: sha256:7d632c2944057ad18de869d2d7672eb3c92f66cdfd50d621dfb59cde99ac9bc4
+      # The publish run that built this digest (workflow_dispatch on main,
+      # 2026-03-22), so the signature vouches for a CI build.
+      SOURCE_RUN: "23404327231"
+      CRANE_VERSION: v0.22.1
+      CRANE_SHA256: 0ab7a1d6932a213aed964ce97666c3077fe691c8606413674a8b3e0b9ec4cda0
+      IDENTITY_REGEXP: '^https://github\.com/log-10x/docker-images/\.github/workflows/'
+      OIDC_ISSUER: https://token.actions.githubusercontent.com
+
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        with:
+          cosign-release: 'v2.4.1'
+
+      - name: Install crane
+        run: |
+          set -euo pipefail
+          curl -fsSLo crane.tar.gz "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz"
+          echo "${CRANE_SHA256}  crane.tar.gz" | sha256sum -c -
+          tar -xzf crane.tar.gz crane
+          sudo install -m 0755 crane /usr/local/bin/crane
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+
+      - name: Check the tag still points at the pinned digest
+        run: |
+          set -euo pipefail
+          got=$(crane digest "${IMAGE}:${TAG}")
+          if [ "$got" != "$DIGEST" ]; then
+            echo "::error::${IMAGE}:${TAG} resolves to ${got}, not the pinned ${DIGEST}; refusing to sign"
+            exit 1
+          fi
+
+      - name: Sign by digest
+        run: cosign sign --yes -a "source-run=${SOURCE_RUN}" "${IMAGE}@${DIGEST}"
+
+      - name: Verify
+        run: |
+          set -euo pipefail
+          cosign verify \
+            --certificate-identity-regexp "$IDENTITY_REGEXP" \
+            --certificate-oidc-issuer "$OIDC_ISSUER" \
+            "${IMAGE}@${DIGEST}" > verify.json
+          {
+            echo "### Signed ${IMAGE}@${DIGEST}"
+            echo
+            echo "Built by run [${SOURCE_RUN}](https://github.com/${{ github.repository }}/actions/runs/${SOURCE_RUN}); tag \`${TAG}\` checked against the pin before signing."
+            echo
+            echo '```json'
+            cat verify.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

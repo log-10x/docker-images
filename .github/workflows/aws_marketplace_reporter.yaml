@@ -318,20 +318,22 @@ jobs:
           set -euo pipefail
           r="${ECR_REGISTRY}/${ECR_PREFIX}"
           out=verify.txt
+          # Extra -a annotations bind a tag to THIS artifact's signature, not to
+          # any signature our identity ever made.
           v() {
-            sigrepo="$1"; ref="$2"
-            echo "== ${ref} (signatures in ${sigrepo})" >> "$out"
+            sigrepo="$1"; ref="$2"; shift 2
+            echo "== ${ref} (signatures in ${sigrepo}) $*" >> "$out"
             COSIGN_REPOSITORY="$sigrepo" cosign verify \
               --certificate-identity-regexp "$IDENTITY_REGEXP" \
-              --certificate-oidc-issuer "$OIDC_ISSUER" "$ref" >> "$out"
+              --certificate-oidc-issuer "$OIDC_ISSUER" "$@" "$ref" >> "$out"
           }
           # Tag form, as a customer runs it: cosign resolves the tag to a digest
           # and requires that digest to be signed by our identity, so a
           # re-pointed, unsigned tag fails here.
           v ghcr.io/log-10x/edge-10x "${r}/edge-10x:${EDGE_TAG}"
           v ghcr.io/log-10x/git-config-fetcher "${r}/git-config-fetcher:${FETCHER_TAG}"
-          v "$SIGNATURE_REPO" "${r}/fluent-bit:${FLUENTBIT_ECR_TAG}"
-          v "$SIGNATURE_REPO" "${r}/reporter-10x:${CHART_VERSION}"
+          v "$SIGNATURE_REPO" "${r}/fluent-bit:${FLUENTBIT_ECR_TAG}" -a role=copy -a "source-index=${FLUENTBIT_INDEX_DIGEST}"
+          v "$SIGNATURE_REPO" "${r}/reporter-10x:${CHART_VERSION}" -a "chart-version=${CHART_VERSION_PINNED}" -a "source=github.com/${CHART_REPO}@${CHART_COMMIT}"
 
           entries=$(crane manifest "${r}/fluent-bit@${FLUENTBIT_ECR_DIGEST}" | jq -r '.manifests[].digest' | sort | tr '\n' ' ')
           want=$(printf '%s\n%s\n' "$FLUENTBIT_AMD64_DIGEST" "$FLUENTBIT_ARM64_DIGEST" | sort | tr '\n' ' ')
@@ -386,8 +388,10 @@ jobs:
 
   tags:
     name: Weekly check that every Marketplace tag still resolves to its signed digest
-    needs: [scan, publish]
-    if: always() && needs.scan.result == 'success' && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    # Tag integrity does not depend on the CVE result: this runs whether the
+    # scan passed or failed, after a publish or on the weekly schedule.
+    needs: [publish]
+    if: always() && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -421,18 +425,19 @@ jobs:
           r="${ECR_REGISTRY}/${ECR_PREFIX}"
           status=0
           check() {
-            ref="$1"; want="$2"; sigrepo="$3"
+            ref="$1"; want="$2"; sigrepo="$3"; shift 3
             got=$(crane digest "$ref" 2>/dev/null || echo unresolved)
             if [ -n "$want" ] && [ "$got" != "$want" ]; then echo "::error::${ref} resolves to ${got}, not the pinned ${want}"; status=1; fi
-            if ! COSIGN_REPOSITORY="$sigrepo" cosign verify --certificate-identity-regexp "$IDENTITY_REGEXP" --certificate-oidc-issuer "$OIDC_ISSUER" "$ref" > /dev/null 2>&1; then
+            if ! COSIGN_REPOSITORY="$sigrepo" cosign verify --certificate-identity-regexp "$IDENTITY_REGEXP" --certificate-oidc-issuer "$OIDC_ISSUER" "$@" "$ref" > /dev/null 2>&1; then
               echo "::error::${ref} (${got}) is not signed by a docker-images workflow on main"; status=1
             fi
             echo "${ref} -> ${got}" >> tags.txt
           }
           check "${r}/edge-10x:${EDGE_TAG}" "$EDGE_DIGEST" ghcr.io/log-10x/edge-10x
           check "${r}/git-config-fetcher:${FETCHER_TAG}" "$FETCHER_DIGEST" ghcr.io/log-10x/git-config-fetcher
-          check "${r}/fluent-bit:${FLUENTBIT_ECR_TAG}" "$FLUENTBIT_ECR_INDEX_DIGEST" "$SIGNATURE_REPO"
-          # The chart's digest is not pinned (helm package is not byte-stable), so its tag is held by the signature alone.
-          check "${r}/reporter-10x:${CHART_VERSION_PINNED}" "" "$SIGNATURE_REPO"
+          check "${r}/fluent-bit:${FLUENTBIT_ECR_TAG}" "$FLUENTBIT_ECR_INDEX_DIGEST" "$SIGNATURE_REPO" -a role=copy -a "source-index=${FLUENTBIT_INDEX_DIGEST}"
+          # The chart's digest is not pinned (helm package is not byte-stable), so its
+          # tag is held by a signature carrying this chart's own version and source.
+          check "${r}/reporter-10x:${CHART_VERSION_PINNED}" "" "$SIGNATURE_REPO" -a "chart-version=${CHART_VERSION_PINNED}" -a "source=github.com/${CHART_REPO}@${CHART_COMMIT}"
           { echo "### Marketplace tags, $(date -u +%Y-%m-%d)"; echo '```'; cat tags.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           exit $status

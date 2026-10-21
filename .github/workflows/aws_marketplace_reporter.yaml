@@ -70,16 +70,16 @@ env:
 
   # ---- Chart source, pinned ----
   CHART_REPO: log-10x/helm-charts
-  # The helm-charts commit to package: set to the merge of helm-charts #40
-  # (image digests, chart 1.3.1) or later.
-  CHART_COMMIT: REPLACE-WITH-HELM-CHARTS-COMMIT
+  # The merge of helm-charts #40 (image digests, chart 1.3.1).
+  CHART_COMMIT: 1068ed02004bb19da2294d6cf37189ebd761e94c
   CHART_PATH: charts/reporter
   KUBE_VERSION: "1.33.0"
 
   # ---- AWS Marketplace ECR, from the container product in the AWS
   # Marketplace Management Portal. Placeholders fail the run. ----
   ECR_REGISTRY: 709825985650.dkr.ecr.us-east-1.amazonaws.com
-  ECR_PREFIX: REPLACE-WITH-MARKETPLACE-PREFIX
+  # Container product prod-6xde2zlqcsleg ("Log10x Reporter").
+  ECR_PREFIX: log10x
   AWS_REGION: us-east-1
 
 jobs:

@@ -62,8 +62,10 @@ env:
   FLUENTBIT_INDEX_DIGEST: sha256:6806769c10acf11b41d14083b3101a24433b4ca113a1ab7a6b1a1b7cad86a7e8
   FLUENTBIT_AMD64_DIGEST: sha256:9d34d17329df76479231b99e7952be9f8ca31cd18d0b4c278cd05bf51e89f169
   FLUENTBIT_ARM64_DIGEST: sha256:8f6033509dc7335f95c7e73262889701f22d4dd4d9ed4f2df0315c872854e89a
-  # Left out of the copy: linux/arm/v7, upstream manifest digest below.
-  FLUENTBIT_DROPPED: linux/arm/v7=sha256:c28d53bb6f1b06eff9525a44ca23d23f75c8c42bb02c131136b927000cdcee21
+  # Left out of the copy: the upstream linux/arm/v7 manifest. Two values,
+  # because a cosign annotation value cannot contain "=".
+  FLUENTBIT_DROPPED_PLATFORM: linux/arm/v7
+  FLUENTBIT_DROPPED_DIGEST: sha256:c28d53bb6f1b06eff9525a44ca23d23f75c8c42bb02c131136b927000cdcee21
   # The two-entry index crane builds from the two manifests above. Its digest
   # is deterministic for a given crane version; re-pin it if CRANE_VERSION
   # changes. Measured with crane v0.22.1 against a local registry, 2026-10-20.
@@ -239,7 +241,8 @@ jobs:
             -a role=copy \
             -a "source=${FLUENTBIT_SRC}:${FLUENTBIT_TAG}" \
             -a "source-index=${FLUENTBIT_INDEX_DIGEST}" \
-            -a "dropped=${FLUENTBIT_DROPPED}" \
+            -a "dropped-platform=${FLUENTBIT_DROPPED_PLATFORM}" \
+            -a "dropped-digest=${FLUENTBIT_DROPPED_DIGEST}" \
             "${dst}@${idx}"
           echo "FLUENTBIT_ECR_DIGEST=${idx}" >> "$GITHUB_ENV"
 
@@ -332,7 +335,7 @@ jobs:
             echo "|---|---|---|"
             echo "| edge-10x | \`${EDGE_DIGEST}\` | ${EDGE_SRC}:${EDGE_TAG} |"
             echo "| git-config-fetcher | \`${FETCHER_DIGEST}\` | ${FETCHER_SRC}:${FETCHER_TAG} |"
-            echo "| fluent-bit | \`${FLUENTBIT_ECR_DIGEST}\` | ${FLUENTBIT_SRC}:${FLUENTBIT_TAG} (amd64, arm64; ${FLUENTBIT_DROPPED} left out) |"
+            echo "| fluent-bit | \`${FLUENTBIT_ECR_DIGEST}\` | ${FLUENTBIT_SRC}:${FLUENTBIT_TAG} (amd64, arm64; ${FLUENTBIT_DROPPED_PLATFORM} ${FLUENTBIT_DROPPED_DIGEST} left out) |"
             echo "| reporter-10x chart | \`${CHART_ECR_DIGEST}\` | ${CHART_REPO}@${CHART_COMMIT} |"
             echo
             echo "Customer verification command (for the listing's usage instructions):"

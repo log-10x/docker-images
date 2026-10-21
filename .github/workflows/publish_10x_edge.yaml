@@ -7,6 +7,11 @@ on:
         required: true
         description: '10x version to install'
         type: string
+      image_revision:
+        required: false
+        description: 'Image-only rebuild of the same engine: tags <release_version>-<revision>. Leave empty for a normal release.'
+        type: string
+        default: ''
       docker_hub:
         required: true
         description: 'Which docker hub to publish to'
@@ -21,6 +26,10 @@ on:
       release_version:
         required: true
         type: string
+      image_revision:
+        required: false
+        type: string
+        default: ''
       docker_hub:
         required: true
         type: string
@@ -32,6 +41,7 @@ jobs:
     outputs:
       image_name: ${{ steps.vars.outputs.image_name }}
       version_tag: ${{ steps.vars.outputs.version_tag }}
+      engine_version: ${{ steps.vars.outputs.engine_version }}
       docker_file: ${{ steps.vars.outputs.docker_file }}
       docker_context: ${{ steps.vars.outputs.docker_context }}
       docker_repo: ${{ steps.vars.outputs.docker_repo }}
@@ -46,6 +56,10 @@ jobs:
             if (!validHubs.includes("${{ inputs.docker_hub }}")) {
               core.setFailed("docker_hub must be one of: GHCR, DockerHub, All")
             }
+            const revision = "${{ inputs.image_revision }}";
+            if (revision !== "" && !/^[0-9]+$/.test(revision)) {
+              core.setFailed("image_revision must be empty or a number, for example 1")
+            }
 
       - name: Prepare variables
         id: vars
@@ -53,7 +67,14 @@ jobs:
           echo "image_name=edge-10x" >> "$GITHUB_OUTPUT"
           echo "docker_file=./main/edge/Dockerfile" >> "$GITHUB_OUTPUT"
           echo "docker_context=./main/edge" >> "$GITHUB_OUTPUT"
-          echo "version_tag=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"
+          # An image-only rebuild (same engine, rebuilt image) gets its own tag,
+          # <release_version>-<revision>; a published tag is never pushed twice.
+          if [ -n "${{ inputs.image_revision }}" ]; then
+            echo "version_tag=${{inputs.release_version}}-${{ inputs.image_revision }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version_tag=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "engine_version=${{inputs.release_version}}" >> "$GITHUB_OUTPUT"
           echo "docker_repo=${{ vars.GHCR_REPO_NAME }}" >> "$GITHUB_OUTPUT"
           echo "dockerhub_repo=docker.io/${{ vars.DOCKERHUB_REPO_NAME }}" >> "$GITHUB_OUTPUT"
 
@@ -237,8 +258,8 @@ jobs:
             echo "::error::the pushed image did not report an engine version. The binary is gated upstream, so this is the image assembly: entrypoint, TENX_HOME layout, or permissions."
             exit 1
           }
-          echo "$OUT" | grep -q "${{needs.prepare.outputs.version_tag}}" || {
-            echo "::error::image reports a different version than the tag it was pushed under. Expected ${{needs.prepare.outputs.version_tag}}."
+          echo "$OUT" | grep -q "${{needs.prepare.outputs.engine_version}}" || {
+            echo "::error::image reports a different engine version than it was built from. Expected ${{needs.prepare.outputs.engine_version}}."
             exit 1
           }
 
@@ -267,8 +288,8 @@ jobs:
             echo "::error::the pushed image did not report an engine version. The binary is gated upstream, so this is the image assembly: entrypoint, TENX_HOME layout, or permissions."
             exit 1
           }
-          echo "$OUT" | grep -q "${{needs.prepare.outputs.version_tag}}" || {
-            echo "::error::image reports a different version than the tag it was pushed under. Expected ${{needs.prepare.outputs.version_tag}}."
+          echo "$OUT" | grep -q "${{needs.prepare.outputs.engine_version}}" || {
+            echo "::error::image reports a different engine version than it was built from. Expected ${{needs.prepare.outputs.engine_version}}."
             exit 1
           }
 

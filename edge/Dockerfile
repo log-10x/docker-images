@@ -32,6 +32,14 @@ LABEL com.log10x.license.url="https://log10x.com/pricing"
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
+# Debian security updates. The base image holds its packages as of the day it
+# was cut; without this, a build ships whatever fixes that day had (1.1.146
+# shipped perl-base 5.36.0-7+deb12u3, CVE-2026-13221, fixed in deb12u4).
+#
+RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
+
 # Make sure path for log file exists and is accessible to all users.
 # This allows changing TENX_LOG_APPENDER to tenxFileAppender if desired
 #

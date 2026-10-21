@@ -54,9 +54,10 @@ env:
 
   # ---- Source images, pinned ----
   EDGE_SRC: ghcr.io/log-10x/edge-10x
-  # 1.1.146 engine, image rebuilt with Debian security updates (docker-images #29).
-  EDGE_TAG: "1.1.146-1"
-  EDGE_DIGEST: sha256:d697b0284ec3b9e23804f65af1377e9e74e816b20a01d3cc0bf2f6aa62d6c478
+  # Engine 1.1.147: the no-token engine runs on the Free tier (engine #233);
+  # Debian security updates in the image (docker-images #29).
+  EDGE_TAG: "1.1.147"
+  EDGE_DIGEST: sha256:a043ccd828742c4eccee09abb654ce6a7357b6123f73300ed04f8605e874b8c4
   FETCHER_SRC: ghcr.io/log-10x/git-config-fetcher
   FETCHER_TAG: "1.0.1"
   FETCHER_DIGEST: sha256:1520926aff844c1a98323fbbca7d4445c5663fca4a9237dce5d44f516d2d2cca

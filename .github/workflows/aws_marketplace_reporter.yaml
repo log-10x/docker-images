@@ -90,8 +90,9 @@ env:
   # ---- AWS Marketplace ECR, from the container product in the AWS
   # Marketplace Management Portal. Placeholders fail the run. ----
   ECR_REGISTRY: 709825985650.dkr.ecr.us-east-1.amazonaws.com
-  # Container product prod-6xde2zlqcsleg ("Log10x Reporter").
-  ECR_PREFIX: log10x
+  # Container product prod-xjdxlprzerkye ("Log10x Reporter", Free offer). It
+  # replaces prod-6xde2zlqcsleg, whose BYOL offer cannot carry an EKS add-on.
+  ECR_PREFIX: log10x/reporter
   AWS_REGION: us-east-1
 
 jobs:

@@ -17,7 +17,10 @@ name: AWS Marketplace reporter-10x (copy, sign, verify)
 #   (Marketplace takes no linux/arm/v7), which this workflow signs as a copy,
 #   never as a build.
 # - The chart is packaged from a pinned helm-charts commit, references every
-#   image by digest, is pushed as OCI and signed by digest.
+#   image as ECR repository:tag (the only form AWS's validator accepts; it
+#   rewrites references for regional copies), is pushed as OCI and signed by
+#   digest. Integrity rests on the signatures: every tag is asserted to
+#   resolve to its pinned, signed digest after the push and every week.
 # - Every ECR URI is verified by digest, plus a wrong-identity control that
 #   must fail. The output goes to the job summary and an artifact.
 # - The weekly schedule scans the pinned source digests for CVEs; a fixable
@@ -59,6 +62,9 @@ env:
   FETCHER_DIGEST: sha256:1520926aff844c1a98323fbbca7d4445c5663fca4a9237dce5d44f516d2d2cca
   FLUENTBIT_SRC: docker.io/fluent/fluent-bit
   FLUENTBIT_TAG: "4.2"
+  # The Marketplace copy is a two-entry index, not upstream's 4.2 index, so it
+  # carries a log10x tag; the same content never ships under two names.
+  FLUENTBIT_ECR_TAG: "4.2-l10x.1"
   FLUENTBIT_INDEX_DIGEST: sha256:6806769c10acf11b41d14083b3101a24433b4ca113a1ab7a6b1a1b7cad86a7e8
   FLUENTBIT_AMD64_DIGEST: sha256:9d34d17329df76479231b99e7952be9f8ca31cd18d0b4c278cd05bf51e89f169
   FLUENTBIT_ARM64_DIGEST: sha256:8f6033509dc7335f95c7e73262889701f22d4dd4d9ed4f2df0315c872854e89a
@@ -73,8 +79,10 @@ env:
 
   # ---- Chart source, pinned ----
   CHART_REPO: log-10x/helm-charts
-  # The merge of helm-charts #41 (chart 1.3.2: image digests, fetcher 1.0.1).
-  CHART_COMMIT: df240713403538d6ac7aea2ac83546ef97e256a8
+  # The merge of helm-charts #42 (chart 1.3.3: repository:tag images only).
+  CHART_COMMIT: 24ac7889eb93a87a1894d6d0f7d50fdb84a1d7fb
+  # Chart.yaml version at CHART_COMMIT; also the chart's Marketplace tag.
+  CHART_VERSION_PINNED: "1.3.3"
   CHART_PATH: charts/reporter
   KUBE_VERSION: "1.33.0"
 
@@ -225,14 +233,14 @@ jobs:
         run: |
           set -euo pipefail
           dst="${ECR_REGISTRY}/${ECR_PREFIX}/fluent-bit"
-          crane copy "${FLUENTBIT_SRC}@${FLUENTBIT_AMD64_DIGEST}" "${dst}:${FLUENTBIT_TAG}-linux-amd64"
-          crane copy "${FLUENTBIT_SRC}@${FLUENTBIT_ARM64_DIGEST}" "${dst}:${FLUENTBIT_TAG}-linux-arm64"
-          [ "$(crane digest "${dst}:${FLUENTBIT_TAG}-linux-amd64")" = "$FLUENTBIT_AMD64_DIGEST" ]
-          [ "$(crane digest "${dst}:${FLUENTBIT_TAG}-linux-arm64")" = "$FLUENTBIT_ARM64_DIGEST" ]
-          crane index append -t "${dst}:${FLUENTBIT_TAG}" \
+          crane copy "${FLUENTBIT_SRC}@${FLUENTBIT_AMD64_DIGEST}" "${dst}:${FLUENTBIT_ECR_TAG}-linux-amd64"
+          crane copy "${FLUENTBIT_SRC}@${FLUENTBIT_ARM64_DIGEST}" "${dst}:${FLUENTBIT_ECR_TAG}-linux-arm64"
+          [ "$(crane digest "${dst}:${FLUENTBIT_ECR_TAG}-linux-amd64")" = "$FLUENTBIT_AMD64_DIGEST" ]
+          [ "$(crane digest "${dst}:${FLUENTBIT_ECR_TAG}-linux-arm64")" = "$FLUENTBIT_ARM64_DIGEST" ]
+          crane index append -t "${dst}:${FLUENTBIT_ECR_TAG}" \
             -m "${dst}@${FLUENTBIT_AMD64_DIGEST}" \
             -m "${dst}@${FLUENTBIT_ARM64_DIGEST}"
-          idx=$(crane digest "${dst}:${FLUENTBIT_TAG}")
+          idx=$(crane digest "${dst}:${FLUENTBIT_ECR_TAG}")
           if [ "$idx" != "$FLUENTBIT_ECR_INDEX_DIGEST" ]; then echo "::error::new index is ${idx}, not the pinned ${FLUENTBIT_ECR_INDEX_DIGEST}"; exit 1; fi
           entries=$(crane manifest "${dst}@${idx}" | jq -r '.manifests[].digest' | sort | tr '\n' ' ')
           want=$(printf '%s\n%s\n' "$FLUENTBIT_AMD64_DIGEST" "$FLUENTBIT_ARM64_DIGEST" | sort | tr '\n' ' ')
@@ -246,41 +254,36 @@ jobs:
             "${dst}@${idx}"
           echo "FLUENTBIT_ECR_DIGEST=${idx}" >> "$GITHUB_ENV"
 
-      - name: Package the chart with every image by digest
+      - name: Package the chart with every image as a pinned Marketplace tag
         working-directory: helm-charts/${{ env.CHART_PATH }}
         run: |
           set -euo pipefail
           r="${ECR_REGISTRY}/${ECR_PREFIX}"
           yq -i "
             .fluentbit.image.repository = \"${r}/fluent-bit\" |
-            .fluentbit.image.tag = \"${FLUENTBIT_TAG}\" |
-            .fluentbit.image.digest = \"${FLUENTBIT_ECR_DIGEST}\" |
+            .fluentbit.image.tag = \"${FLUENTBIT_ECR_TAG}\" |
             .tenx.image.repository = \"${r}/edge-10x\" |
             .tenx.image.tag = \"${EDGE_TAG}\" |
-            .tenx.image.digest = \"${EDGE_DIGEST}\" |
             .configFetcherImage.repository = \"${r}/git-config-fetcher\" |
-            .configFetcherImage.tag = \"${FETCHER_TAG}\" |
-            .configFetcherImage.digest = \"${FETCHER_DIGEST}\"
+            .configFetcherImage.tag = \"${FETCHER_TAG}\"
           " values.yaml
           helm lint .
           # Marketplace's own checks: render with no hooks, and every image
-          # line, list form included, must be a Marketplace ECR reference by
-          # digest. Rendered twice so the git init container is checked too.
+          # line, list form included, must be exactly one of the three pinned
+          # Marketplace references. Rendered twice so the git init container
+          # is checked too.
           render() { helm template reporter-10x . --kube-version "$KUBE_VERSION" --namespace log10x --include-crds --no-hooks "$@"; }
-          gate() {
-            grep -E '^\s*(-\s*)?image:' "$1" \
-              | grep -v -E "^\s*(-\s*)?image: \"?${r}/[a-z0-9-]+@sha256:[0-9a-f]{64}\"?$" || true
-          }
+          allowed="^\s*(-\s*)?image: \"?(${r}/edge-10x:${EDGE_TAG}|${r}/fluent-bit:${FLUENTBIT_ECR_TAG}|${r}/git-config-fetcher:${FETCHER_TAG})\"?$"
+          gate() { grep -E '^\s*(-\s*)?image:' "$1" | grep -v -E "$allowed" || true; }
           for extra in "" "--set config.git.enabled=true"; do
             render $extra > rendered.yaml
             bad=$(gate rendered.yaml)
-            if [ -n "$bad" ]; then echo "::error::images that are not Marketplace ECR digests:"; echo "$bad"; exit 1; fi
+            if [ -n "$bad" ]; then echo "::error::images that are not pinned Marketplace references:"; echo "$bad"; exit 1; fi
           done
-          # The gate must be able to fail: with one digest blanked, the edge
-          # image renders by tag and has to be rejected.
-          render --set tenx.image.digest= > control.yaml
+          # The gate must be able to fail: a wrong tag has to be rejected.
+          render --set tenx.image.tag=wrong-tag > control.yaml
           if [ -z "$(gate control.yaml)" ]; then
-            echo "::error::the image gate accepted a render with a blank digest; it proves nothing"; exit 1
+            echo "::error::the image gate accepted a wrong tag; it proves nothing"; exit 1
           fi
           helm package . --destination "$GITHUB_WORKSPACE/chart-out"
 
@@ -289,6 +292,7 @@ jobs:
           set -euo pipefail
           pkg=$(ls "$GITHUB_WORKSPACE"/chart-out/reporter-10x-*.tgz)
           version=$(basename "$pkg" .tgz | sed 's/^reporter-10x-//')
+          [ "$version" = "$CHART_VERSION_PINNED" ] || { echo "::error::packaged chart is ${version}, pinned ${CHART_VERSION_PINNED}"; exit 1; }
           helm push "$pkg" "oci://${ECR_REGISTRY}/${ECR_PREFIX}"
           chart="${ECR_REGISTRY}/${ECR_PREFIX}/reporter-10x"
           cd=$(crane digest "${chart}:${version}")
@@ -299,22 +303,37 @@ jobs:
           echo "CHART_VERSION=${version}" >> "$GITHUB_ENV"
           echo "CHART_ECR_DIGEST=${cd}" >> "$GITHUB_ENV"
 
-      - name: Verify every ECR URI by digest, with a control that must fail
+      - name: Assert every Marketplace tag resolves to its pinned, signed digest
+        run: |
+          set -euo pipefail
+          r="${ECR_REGISTRY}/${ECR_PREFIX}"
+          check() { got=$(crane digest "$1"); [ "$got" = "$2" ] || { echo "::error::$1 resolves to ${got}, not the pinned $2"; exit 1; }; echo "ok $1 -> $2"; }
+          check "${r}/edge-10x:${EDGE_TAG}" "$EDGE_DIGEST"
+          check "${r}/git-config-fetcher:${FETCHER_TAG}" "$FETCHER_DIGEST"
+          check "${r}/fluent-bit:${FLUENTBIT_ECR_TAG}" "$FLUENTBIT_ECR_INDEX_DIGEST"
+          check "${r}/reporter-10x:${CHART_VERSION}" "$CHART_ECR_DIGEST"
+
+      - name: Verify every ECR reference in tag form, with a control that must fail
         run: |
           set -euo pipefail
           r="${ECR_REGISTRY}/${ECR_PREFIX}"
           out=verify.txt
+          # Extra -a annotations bind a tag to THIS artifact's signature, not to
+          # any signature our identity ever made.
           v() {
-            sigrepo="$1"; ref="$2"
-            echo "== ${ref} (signatures in ${sigrepo})" >> "$out"
+            sigrepo="$1"; ref="$2"; shift 2
+            echo "== ${ref} (signatures in ${sigrepo}) $*" >> "$out"
             COSIGN_REPOSITORY="$sigrepo" cosign verify \
               --certificate-identity-regexp "$IDENTITY_REGEXP" \
-              --certificate-oidc-issuer "$OIDC_ISSUER" "$ref" >> "$out"
+              --certificate-oidc-issuer "$OIDC_ISSUER" "$@" "$ref" >> "$out"
           }
-          v ghcr.io/log-10x/edge-10x "${r}/edge-10x@${EDGE_DIGEST}"
-          v ghcr.io/log-10x/git-config-fetcher "${r}/git-config-fetcher@${FETCHER_DIGEST}"
-          v "$SIGNATURE_REPO" "${r}/fluent-bit@${FLUENTBIT_ECR_DIGEST}"
-          v "$SIGNATURE_REPO" "${r}/reporter-10x@${CHART_ECR_DIGEST}"
+          # Tag form, as a customer runs it: cosign resolves the tag to a digest
+          # and requires that digest to be signed by our identity, so a
+          # re-pointed, unsigned tag fails here.
+          v ghcr.io/log-10x/edge-10x "${r}/edge-10x:${EDGE_TAG}"
+          v ghcr.io/log-10x/git-config-fetcher "${r}/git-config-fetcher:${FETCHER_TAG}"
+          v "$SIGNATURE_REPO" "${r}/fluent-bit:${FLUENTBIT_ECR_TAG}" -a role=copy -a "source-index=${FLUENTBIT_INDEX_DIGEST}"
+          v "$SIGNATURE_REPO" "${r}/reporter-10x:${CHART_VERSION}" -a "chart-version=${CHART_VERSION_PINNED}" -a "source=github.com/${CHART_REPO}@${CHART_COMMIT}"
 
           entries=$(crane manifest "${r}/fluent-bit@${FLUENTBIT_ECR_DIGEST}" | jq -r '.manifests[].digest' | sort | tr '\n' ' ')
           want=$(printf '%s\n%s\n' "$FLUENTBIT_AMD64_DIGEST" "$FLUENTBIT_ARM64_DIGEST" | sort | tr '\n' ' ')
@@ -323,7 +342,7 @@ jobs:
 
           if COSIGN_REPOSITORY=ghcr.io/log-10x/edge-10x cosign verify \
               --certificate-identity-regexp "$CONTROL_IDENTITY_REGEXP" \
-              --certificate-oidc-issuer "$OIDC_ISSUER" "${r}/edge-10x@${EDGE_DIGEST}" > /dev/null 2>&1; then
+              --certificate-oidc-issuer "$OIDC_ISSUER" "${r}/edge-10x:${EDGE_TAG}" > /dev/null 2>&1; then
             echo "::error::the wrong-identity control verified; the check proves nothing"; exit 1
           fi
           echo "== control: a log-10x/engine signer does not verify (expected)" >> "$out"
@@ -331,12 +350,12 @@ jobs:
           {
             echo "### AWS Marketplace reporter-10x, chart ${CHART_VERSION}"
             echo
-            echo "| Artifact | ECR digest | Source |"
-            echo "|---|---|---|"
-            echo "| edge-10x | \`${EDGE_DIGEST}\` | ${EDGE_SRC}:${EDGE_TAG} |"
-            echo "| git-config-fetcher | \`${FETCHER_DIGEST}\` | ${FETCHER_SRC}:${FETCHER_TAG} |"
-            echo "| fluent-bit | \`${FLUENTBIT_ECR_DIGEST}\` | ${FLUENTBIT_SRC}:${FLUENTBIT_TAG} (amd64, arm64; ${FLUENTBIT_DROPPED_PLATFORM} ${FLUENTBIT_DROPPED_DIGEST} left out) |"
-            echo "| reporter-10x chart | \`${CHART_ECR_DIGEST}\` | ${CHART_REPO}@${CHART_COMMIT} |"
+            echo "| Artifact | Marketplace tag | Digest | Source |"
+            echo "|---|---|---|---|"
+            echo "| edge-10x | ${EDGE_TAG} | \`${EDGE_DIGEST}\` | ${EDGE_SRC}:${EDGE_TAG} |"
+            echo "| git-config-fetcher | ${FETCHER_TAG} | \`${FETCHER_DIGEST}\` | ${FETCHER_SRC}:${FETCHER_TAG} |"
+            echo "| fluent-bit | ${FLUENTBIT_ECR_TAG} | \`${FLUENTBIT_ECR_DIGEST}\` | ${FLUENTBIT_SRC}:${FLUENTBIT_TAG} (amd64, arm64; ${FLUENTBIT_DROPPED_PLATFORM} ${FLUENTBIT_DROPPED_DIGEST} left out) |"
+            echo "| reporter-10x chart | ${CHART_VERSION} | \`${CHART_ECR_DIGEST}\` | ${CHART_REPO}@${CHART_COMMIT} |"
             echo
             echo "Customer verification command (for the listing's usage instructions):"
             echo
@@ -344,7 +363,12 @@ jobs:
             echo "COSIGN_REPOSITORY=ghcr.io/log-10x/edge-10x cosign verify \\"
             echo "  --certificate-identity-regexp '${IDENTITY_REGEXP}' \\"
             echo "  --certificate-oidc-issuer ${OIDC_ISSUER} \\"
-            echo "  ${r}/edge-10x@${EDGE_DIGEST}"
+            echo "  ${r}/edge-10x:${EDGE_TAG}"
+            echo '```'
+            echo
+            echo "Expected digests: edge-10x ${EDGE_DIGEST}; git-config-fetcher ${FETCHER_DIGEST}; fluent-bit ${FLUENTBIT_ECR_DIGEST}; chart ${CHART_ECR_DIGEST}."
+            echo '```'
+            echo "(end of customer section)"
             echo '```'
             echo
             echo '<details><summary>cosign verify output</summary>'
@@ -361,3 +385,59 @@ jobs:
           name: aws-marketplace-reporter-verify-${{ github.run_id }}
           path: verify.txt
           retention-days: 90
+
+  tags:
+    name: Weekly check that every Marketplace tag still resolves to its signed digest
+    # Tag integrity does not depend on the CVE result: this runs whether the
+    # scan passed or failed, after a publish or on the weekly schedule.
+    needs: [publish]
+    if: always() && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        with:
+          cosign-release: ${{ env.COSIGN_RELEASE }}
+
+      - name: Install crane
+        run: |
+          set -euo pipefail
+          curl -fsSLo crane.tar.gz "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz"
+          echo "${CRANE_SHA256}  crane.tar.gz" | sha256sum -c -
+          tar -xzf crane.tar.gz crane
+          sudo install -m 0755 crane /usr/local/bin/crane
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_MARKETPLACE_ECR_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Marketplace ECR
+        run: aws ecr get-login-password --region "$AWS_REGION" | crane auth login "$ECR_REGISTRY" -u AWS --password-stdin
+
+      - name: Assert tags and signatures
+        run: |
+          set -euo pipefail
+          r="${ECR_REGISTRY}/${ECR_PREFIX}"
+          status=0
+          check() {
+            ref="$1"; want="$2"; sigrepo="$3"; shift 3
+            got=$(crane digest "$ref" 2>/dev/null || echo unresolved)
+            if [ -n "$want" ] && [ "$got" != "$want" ]; then echo "::error::${ref} resolves to ${got}, not the pinned ${want}"; status=1; fi
+            if ! COSIGN_REPOSITORY="$sigrepo" cosign verify --certificate-identity-regexp "$IDENTITY_REGEXP" --certificate-oidc-issuer "$OIDC_ISSUER" "$@" "$ref" > /dev/null 2>&1; then
+              echo "::error::${ref} (${got}) is not signed by a docker-images workflow on main"; status=1
+            fi
+            echo "${ref} -> ${got}" >> tags.txt
+          }
+          check "${r}/edge-10x:${EDGE_TAG}" "$EDGE_DIGEST" ghcr.io/log-10x/edge-10x
+          check "${r}/git-config-fetcher:${FETCHER_TAG}" "$FETCHER_DIGEST" ghcr.io/log-10x/git-config-fetcher
+          check "${r}/fluent-bit:${FLUENTBIT_ECR_TAG}" "$FLUENTBIT_ECR_INDEX_DIGEST" "$SIGNATURE_REPO" -a role=copy -a "source-index=${FLUENTBIT_INDEX_DIGEST}"
+          # The chart's digest is not pinned (helm package is not byte-stable), so its
+          # tag is held by a signature carrying this chart's own version and source.
+          check "${r}/reporter-10x:${CHART_VERSION_PINNED}" "" "$SIGNATURE_REPO" -a "chart-version=${CHART_VERSION_PINNED}" -a "source=github.com/${CHART_REPO}@${CHART_COMMIT}"
+          { echo "### Marketplace tags, $(date -u +%Y-%m-%d)"; echo '```'; cat tags.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status

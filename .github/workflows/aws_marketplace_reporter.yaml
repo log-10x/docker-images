@@ -51,11 +51,12 @@ env:
 
   # ---- Source images, pinned ----
   EDGE_SRC: ghcr.io/log-10x/edge-10x
-  EDGE_TAG: "1.1.146"
-  EDGE_DIGEST: sha256:4d7be22e5e91ffe344ec9878b45063d21a9c2eb4909799a6d5a7f456db5f0c3a
+  # 1.1.146 engine, image rebuilt with Debian security updates (docker-images #29).
+  EDGE_TAG: "1.1.146-1"
+  EDGE_DIGEST: sha256:d697b0284ec3b9e23804f65af1377e9e74e816b20a01d3cc0bf2f6aa62d6c478
   FETCHER_SRC: ghcr.io/log-10x/git-config-fetcher
-  FETCHER_TAG: "1.0.0"
-  FETCHER_DIGEST: sha256:7d632c2944057ad18de869d2d7672eb3c92f66cdfd50d621dfb59cde99ac9bc4
+  FETCHER_TAG: "1.0.1"
+  FETCHER_DIGEST: sha256:1520926aff844c1a98323fbbca7d4445c5663fca4a9237dce5d44f516d2d2cca
   FLUENTBIT_SRC: docker.io/fluent/fluent-bit
   FLUENTBIT_TAG: "4.2"
   FLUENTBIT_INDEX_DIGEST: sha256:6806769c10acf11b41d14083b3101a24433b4ca113a1ab7a6b1a1b7cad86a7e8
@@ -70,8 +71,8 @@ env:
 
   # ---- Chart source, pinned ----
   CHART_REPO: log-10x/helm-charts
-  # The merge of helm-charts #40 (image digests, chart 1.3.1).
-  CHART_COMMIT: 1068ed02004bb19da2294d6cf37189ebd761e94c
+  # The merge of helm-charts #41 (chart 1.3.2: image digests, fetcher 1.0.1).
+  CHART_COMMIT: df240713403538d6ac7aea2ac83546ef97e256a8
   CHART_PATH: charts/reporter
   KUBE_VERSION: "1.33.0"
 

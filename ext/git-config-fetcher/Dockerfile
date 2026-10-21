@@ -3,7 +3,9 @@
 
 FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:3.21
 
-RUN apk add --no-cache git
+# Upgrade the base packages too, so a rebuild picks up security fixes
+# published after the alpine:3.21 image was cut.
+RUN apk upgrade --no-cache && apk add --no-cache git
 
 # OCI Image Labels - Community Tool (no Log10x license required)
 LABEL org.opencontainers.image.title="Log10x Git Config Fetcher"

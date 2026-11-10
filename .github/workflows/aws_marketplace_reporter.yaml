@@ -54,36 +54,43 @@ env:
 
   # ---- Source images, pinned ----
   EDGE_SRC: ghcr.io/log-10x/edge-10x
-  # Engine 1.1.147: the no-token engine runs on the Free tier (engine #233);
-  # Debian security updates in the image (docker-images #29).
-  EDGE_TAG: "1.1.147"
-  EDGE_DIGEST: sha256:a043ccd828742c4eccee09abb654ce6a7357b6123f73300ed04f8605e874b8c4
+  # Engine 1.1.153, the current engine release. The no-token engine still
+  # starts on the built-in Free tier.
+  EDGE_TAG: "1.1.153"
+  EDGE_DIGEST: sha256:439f728a748d363b73baf004bb9817f5d7c610e0563a8208161c0443a135cedd
   FETCHER_SRC: ghcr.io/log-10x/git-config-fetcher
-  FETCHER_TAG: "1.0.1"
-  FETCHER_DIGEST: sha256:1520926aff844c1a98323fbbca7d4445c5663fca4a9237dce5d44f516d2d2cca
+  # 1.0.2 is a rebuild of 1.0.1 for brotli CVE-2026-111497 (docker-images #35).
+  FETCHER_TAG: "1.0.2"
+  FETCHER_DIGEST: sha256:efedd58473c7e7545ba93749a1a500e2735b4c931cfb9318433e8e38c3b40447
   FLUENTBIT_SRC: docker.io/fluent/fluent-bit
-  FLUENTBIT_TAG: "4.2"
+  # 5.1.5-2 is upstream's rebuild of 5.1.5 with Debian's libbrotli1
+  # 1.1.0-2+deb13u1 (CVE-2026-111497, critical). The 4.2 line has no build
+  # carrying it, so 4.2 fails the pre-publish CVE gate.
+  FLUENTBIT_TAG: "5.1.5-2"
   # The Marketplace copy is a two-entry index, not upstream's 4.2 index, so it
   # carries a log10x tag; the same content never ships under two names.
-  FLUENTBIT_ECR_TAG: "4.2-l10x.1"
-  FLUENTBIT_INDEX_DIGEST: sha256:6806769c10acf11b41d14083b3101a24433b4ca113a1ab7a6b1a1b7cad86a7e8
-  FLUENTBIT_AMD64_DIGEST: sha256:9d34d17329df76479231b99e7952be9f8ca31cd18d0b4c278cd05bf51e89f169
-  FLUENTBIT_ARM64_DIGEST: sha256:8f6033509dc7335f95c7e73262889701f22d4dd4d9ed4f2df0315c872854e89a
+  FLUENTBIT_ECR_TAG: "5.1.5-2-l10x.1"
+  FLUENTBIT_INDEX_DIGEST: sha256:1e1b4b0a62fdb9fdaa832ade335d996c34e86fa29858b2a3e6d20c210c1c497f
+  FLUENTBIT_AMD64_DIGEST: sha256:9b6786d8d129fe8e4a2e19a9cb4aebeb44bd31fb52377b7ef1db327f56e0b951
+  FLUENTBIT_ARM64_DIGEST: sha256:35100a7cf11943c331f86776db2c9e98766c5210b9608787fb705e0b01dba686
   # Left out of the copy: the upstream linux/arm/v7 manifest. Two values,
   # because a cosign annotation value cannot contain "=".
   FLUENTBIT_DROPPED_PLATFORM: linux/arm/v7
-  FLUENTBIT_DROPPED_DIGEST: sha256:c28d53bb6f1b06eff9525a44ca23d23f75c8c42bb02c131136b927000cdcee21
+  FLUENTBIT_DROPPED_DIGEST: sha256:44217bf77e602213aa21af48bf0b5e177084c1245bbfeba36dc3f05d50a5d3e0
   # The two-entry index crane builds from the two manifests above. Its digest
   # is deterministic for a given crane version; re-pin it if CRANE_VERSION
-  # changes. Measured with crane v0.22.1 against a local registry, 2026-10-20.
-  FLUENTBIT_ECR_INDEX_DIGEST: sha256:8aa6cac72f188c16777d3f1fe5243058f6f825f1ab59d4ebc99635b8c682bd4d
+  # changes. Measured with crane v0.22.1 against a local registry, 2026-11-10;
+  # the same method reproduced the earlier 4.2 pin (sha256:8aa6cac7...82bd4d)
+  # exactly. The index is OCI; its two entries keep upstream's Docker v2
+  # manifest type, because they are copied by digest.
+  FLUENTBIT_ECR_INDEX_DIGEST: sha256:84fc1d47bee48ec217d2ba2068e5d76fc21e63c3b9ae295f2aa98071091347f9
 
   # ---- Chart source, pinned ----
   CHART_REPO: log-10x/helm-charts
-  # The merge of helm-charts #42 (chart 1.3.3: repository:tag images only).
-  CHART_COMMIT: 24ac7889eb93a87a1894d6d0f7d50fdb84a1d7fb
+  # The merge of helm-charts #44 (chart 1.3.4: engine 1.1.153, Fluent Bit 5.1.5-2).
+  CHART_COMMIT: e3679e6942ca5dfd9d56504c7f984eee1e5c6d64
   # Chart.yaml version at CHART_COMMIT; also the chart's Marketplace tag.
-  CHART_VERSION_PINNED: "1.3.3"
+  CHART_VERSION_PINNED: "1.3.4"
   CHART_PATH: charts/reporter
   KUBE_VERSION: "1.33.0"
 

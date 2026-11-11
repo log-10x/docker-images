@@ -399,8 +399,10 @@ jobs:
     name: Weekly check that every Marketplace tag still resolves to its signed digest
     # Tag integrity does not depend on the CVE result: this runs whether the
     # scan passed or failed, after a publish or on the weekly schedule.
+    # Main only: the AWS role trusts main, so a branch run is refused and
+    # trips the unauthorized-call alarm.
     needs: [publish]
-    if: always() && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    if: always() && github.ref == 'refs/heads/main' && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
